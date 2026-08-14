@@ -37,11 +37,11 @@ def load_config(path: str) -> dict[str, str]:
         raise ConfigError(
             f"[CONFIG_ERROR] No such file at following path '{path}' found"
         )
-    check_config(config)
+    check_mandatory_keys(config)
     return config
 
 
-def check_config(config: dict) -> None:
+def check_mandatory_keys(config: dict) -> None:
     """Raise ConfigError listing every mandatory key missing from config."""
     remainder = set(MANDATORY_CONFIG_KEYS) - set(config.keys())
     if remainder:
