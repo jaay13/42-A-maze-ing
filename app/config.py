@@ -150,3 +150,37 @@ def parse_bool(raw: str, key: str) -> bool:
             f"(case-insensitive), got '{raw}'"
         )
     return lower == "true"
+
+
+CONVERTERS = {
+    "WIDTH": parse_int, "HEIGHT": parse_int, "ENTRY": parse_coords,
+    "EXIT": parse_coords, "PERFECT": parse_bool
+}
+
+
+def parse_config(raw: dict) -> dict:
+    """Convert mandatory config values to their real types.
+
+    WIDTH/HEIGHT become int, ENTRY/EXIT become (int, int) tuples, and
+    PERFECT becomes bool. Every other key (e.g. OUTPUT_FILE, SEED) is
+    passed through unchanged.
+
+    Args:
+        raw: The raw string-valued dict returned by load_config.
+
+    Returns:
+        A dict with the same keys as raw, but with mandatory values
+        converted to their proper types.
+
+    Raises:
+        ConfigError: If any mandatory value fails its conversion.
+    """
+    typed_dict = {}
+    for k, converter in CONVERTERS.items():
+        typed_dict[k] = converter(raw[k], k)
+
+    for k, v in raw.items():
+        if k not in typed_dict:
+            typed_dict[k] = v
+
+    return typed_dict
