@@ -7,7 +7,13 @@ MANDATORY_CONFIG_KEYS = [
 
 
 class ConfigError(Exception):
-    """Raised when config.txt is missing, malformed, or invalid."""
+    """Raised when config.txt is missing, malformed, or invalid.
+
+    Args:
+        message: Human-readable description of what is wrong with the
+            config file, including enough detail (line number, key
+            name, or path) for the user to fix it.
+    """
 
 
 def load_config(path: str) -> dict[str, str]:
@@ -15,8 +21,16 @@ def load_config(path: str) -> dict[str, str]:
 
     Blank lines and lines starting with '#' are ignored. Keys are
     upper-cased so lookups don't depend on the casing used in the file.
-    Raises ConfigError if the file doesn't exist, a non-blank/non-comment
-    line has no '=', or a mandatory key is missing.
+
+    Args:
+        path: Path to the config file to read.
+
+    Returns:
+        A dict mapping each upper-cased key to its raw string value.
+
+    Raises:
+        ConfigError: If the file doesn't exist, a non-blank/non-comment
+            line has no '=', or a mandatory key is missing.
     """
     config: dict[str, str] = {}
     try:
@@ -42,7 +56,15 @@ def load_config(path: str) -> dict[str, str]:
 
 
 def check_mandatory_keys(config: dict) -> None:
-    """Raise ConfigError listing every mandatory key missing from config."""
+    """Validate that every mandatory config key is present.
+
+    Args:
+        config: The raw config dict returned by load_config.
+
+    Raises:
+        ConfigError: If one or more mandatory keys are missing, naming
+            all of the missing keys in a single message.
+    """
     remainder = set(MANDATORY_CONFIG_KEYS) - set(config.keys())
     if remainder:
         missing = ", ".join(sorted(remainder))
