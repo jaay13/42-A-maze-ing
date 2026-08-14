@@ -19,10 +19,16 @@ def load_config(path: str) -> dict[str, str]:
     """
     config: dict[str, str] = {}
     with open(path) as f:
-        for line in f:
+        for line_nbr, line in enumerate(f, start=1):
+            raw_line = line.rstrip("\n")
             line = line.strip()
-            if not line or line.startswith("#") or "=" not in line:
+            if not line or line.startswith("#"):
                 continue
+            elif "=" not in line:
+                raise ConfigError(
+                    f"[ERROR] Found corrupted line (No. {line_nbr}) "
+                    f"in config: '{raw_line}'"
+                )
             key, value = line.split("=", 1)
             config[key.strip().upper()] = value.strip()
     check_config(config)
@@ -34,5 +40,5 @@ def check_config(config: dict) -> None:
     remainder = set(MANDATORY_CONFIG_KEYS) - set(config.keys())
     if remainder:
         missing = ", ".join(sorted(remainder))
-        raise ConfigError(f"The config.txt is missing: {missing}")
+        raise ConfigError(f"[ERROR] The config is missing mandatory keys: {missing}")
 
