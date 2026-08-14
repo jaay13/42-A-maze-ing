@@ -125,3 +125,28 @@ def parse_coords(raw: str, key: str) -> tuple[int, int]:
             f"separated by a comma, e.g. 'x,y' .. got '{raw}'"
         )
     return (int_a, int_b)
+
+
+def parse_bool(raw: str, key: str) -> bool:
+    """Convert a raw string into a bool.
+
+    Used for PERFECT.
+
+    Args:
+        raw: The raw value string, e.g. 'true' or 'False'.
+        key: The config key this value came from, used in the error
+            message (e.g. 'PERFECT').
+
+    Returns:
+        True if raw is 'true' (case-insensitive), False if 'false'.
+
+    Raises:
+        ConfigError: If raw is anything other than 'true'/'false'.
+    """
+    lower = raw.lower()
+    if not (lower == "true" or lower == "false"):
+        raise ConfigError(
+            f"[CONFIG_ERROR] '{key}' must be either true/false "
+            f"(case-insensitive), got '{raw}'"
+        )
+    return lower == "true"
