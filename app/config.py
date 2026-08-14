@@ -71,3 +71,57 @@ def check_mandatory_keys(config: dict) -> None:
         raise ConfigError(
             f"[CONFIG_ERROR] The config is missing mandatory keys: {missing}"
         )
+
+
+def parse_int(raw: str, key: str) -> int:
+    """Convert a raw string into an int.
+
+    Used for WIDTH and HEIGHT.
+
+    Args:
+        raw: The raw value string, e.g. '5'.
+        key: The config key this value came from, used in the error
+            message (e.g. 'WIDTH').
+
+    Returns:
+        The parsed int.
+
+    Raises:
+        ConfigError: If raw isn't a valid integer.
+    """
+    try:
+        x = int(raw)
+    except ValueError:
+        raise ConfigError(
+            f"[CONFIG_ERROR] '{key}' must be an integer, got '{raw}'"
+        )
+    return x
+
+
+def parse_coords(raw: str, key: str) -> tuple[int, int]:
+    """Convert a 'x,y' string into a tuple of two ints.
+
+    Used for ENTRY and EXIT.
+
+    Args:
+        raw: The raw coordinate string, e.g. '0,0'.
+        key: The config key this value came from, used in the error
+            message (e.g. 'ENTRY').
+
+    Returns:
+        A (x, y) tuple of ints.
+
+    Raises:
+        ConfigError: If raw doesn't split into exactly two integers
+            separated by a comma.
+    """
+    try:
+        a, b = raw.split(",")
+        int_a = int(a)
+        int_b = int(b)
+    except ValueError:
+        raise ConfigError(
+            f"[CONFIG_ERROR] '{key}' must be two integers "
+            f"separated by a comma, e.g. 'x,y' .. got '{raw}'"
+        )
+    return (int_a, int_b)
