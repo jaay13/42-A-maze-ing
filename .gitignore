@@ -5,3 +5,6 @@ build/
 dist/
 *.egg-info/
 /subject.pdf
+
+# generated maze output (default OUTPUT_FILE)
+maze.txt
