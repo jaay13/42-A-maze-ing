@@ -1,40 +1,65 @@
+"""Entry point for A-Maze-ing.
+
+Reads a KEY=VALUE configuration file, generates a maze with the mazegen
+engine, displays it, and offers an interactive menu. Every error the
+user can trigger is reported as a single clean message on stderr with
+exit code 1; no traceback ever reaches the terminal.
+
+Usage:
+    python3 a_maze_ing.py config.txt
+"""
+
 import sys
 
+from app.config import ConfigError, load_config, parse_config
 from mazegen import MazeGenerator, MazegenError
 
-# CP1 skeleton: config parsing (B1), output writing (B3), rendering (B4) and
-# the real menu (B5) land later. This just proves the app can drive the
-# engine end to end.
 
-CONFIG_PATH = sys.argv[1] if len(sys.argv) > 1 else "config.txt"
+def get_config_path() -> str:
+    """Return the config file path named on the command line.
 
+    Exactly one argument is required (subject SS IV.2: "config.txt is
+    the only argument"). A wrong invocation is not a config-file
+    problem, so this prints usage to stderr and exits 1 directly rather
+    than raising ConfigError.
 
-def load_config(path: str) -> dict[str, str]:
-    config: dict[str, str] = {}
-    with open(path) as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            key, value = line.split("=", 1)
-            config[key.strip().upper()] = value.strip()
-    return config
-
-
-def parse_coord(raw: str) -> tuple[int, int]:
-    x, y = raw.strip("() ").split(",")
-    return int(x), int(y)
+    Returns:
+        The path passed as the single command-line argument.
+    """
+    if len(sys.argv) != 2:
+        print(
+            "[USAGE_ERROR] Please specify a config file: "
+            "python3 a_maze_ing.py <config_file>, nothing more or less",
+            file=sys.stderr
+        )
+        sys.exit(1)
+    return sys.argv[1]
 
 
 def main() -> None:
-    config = load_config(CONFIG_PATH)
+    """Load and validate the config, build a maze, and drive the CLI loop.
+
+    Reads the config file named on the command line, builds a
+    MazeGenerator from the validated, typed config, prints the
+    generated maze, and loops offering the user a chance to regenerate
+    or quit. Exits 1 via get_config_path if the program was invoked
+    with anything other than exactly one argument.
+
+    Raises:
+        ConfigError: If the config file is missing, malformed, or
+            invalid.
+        MazegenError: If the maze parameters are invalid or the maze
+            can't be generated/solved.
+    """
+    config_path = get_config_path()
+    config = parse_config(load_config(config_path))
     generator = MazeGenerator(
-        width=int(config["WIDTH"]),
-        height=int(config["HEIGHT"]),
-        entry=parse_coord(config["ENTRY"]),
-        exit=parse_coord(config["EXIT"]),
-        perfect=config.get("PERFECT", "false").lower() == "true",
-        seed=int(config["SEED"]) if "SEED" in config else None,
+        width=config["WIDTH"],
+        height=config["HEIGHT"],
+        entry=config["ENTRY"],
+        exit=config["EXIT"],
+        perfect=config["PERFECT"],
+        seed=config.get("SEED"),
     )
     generator.generate()
 
@@ -56,8 +81,11 @@ def main() -> None:
 if __name__ == "__main__":
     try:
         main()
-    except MazegenError as exc:
-        print(f"error: {exc}", file=sys.stderr)
+    except MazegenError as e:
+        print(f"[MAZE_ERROR] {e}", file=sys.stderr)
+        sys.exit(1)
+    except ConfigError as e:
+        print(e, file=sys.stderr)
         sys.exit(1)
     except (EOFError, KeyboardInterrupt):
         print()
