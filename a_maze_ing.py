@@ -14,15 +14,36 @@ import sys
 from app.config import ConfigError, load_config, parse_config
 from mazegen import MazeGenerator, MazegenError
 
-CONFIG_PATH = sys.argv[1] if len(sys.argv) > 1 else "config.txt"
+
+def get_config_path() -> str:
+    """Return the config file path named on the command line.
+
+    Exactly one argument is required (subject SS IV.2: "config.txt is
+    the only argument"). A wrong invocation is not a config-file
+    problem, so this prints usage to stderr and exits 1 directly rather
+    than raising ConfigError.
+
+    Returns:
+        The path passed as the single command-line argument.
+    """
+    if len(sys.argv) != 2:
+        print(
+            "[USAGE_ERROR] Please specify a config file: "
+            "python3 a_maze_ing.py <config_file>, nothing more or less",
+            file=sys.stderr
+        )
+        sys.exit(1)
+    return sys.argv[1]
 
 
 def main() -> None:
     """Load and validate the config, build a maze, and drive the CLI loop.
 
-    Reads CONFIG_PATH, builds a MazeGenerator from the validated,
-    typed config, prints the generated maze, and loops offering the
-    user a chance to regenerate or quit.
+    Reads the config file named on the command line, builds a
+    MazeGenerator from the validated, typed config, prints the
+    generated maze, and loops offering the user a chance to regenerate
+    or quit. Exits 1 via get_config_path if the program was invoked
+    with anything other than exactly one argument.
 
     Raises:
         ConfigError: If the config file is missing, malformed, or
@@ -30,7 +51,8 @@ def main() -> None:
         MazegenError: If the maze parameters are invalid or the maze
             can't be generated/solved.
     """
-    config = parse_config(load_config(CONFIG_PATH))
+    config_path = get_config_path()
+    config = parse_config(load_config(config_path))
     generator = MazeGenerator(
         width=config["WIDTH"],
         height=config["HEIGHT"],
@@ -59,8 +81,8 @@ def main() -> None:
 if __name__ == "__main__":
     try:
         main()
-    except MazegenError as exc:
-        print(f"error: {exc}", file=sys.stderr)
+    except MazegenError as e:
+        print(f"[MAZE_ERROR] {e}", file=sys.stderr)
         sys.exit(1)
     except ConfigError as e:
         print(e, file=sys.stderr)
