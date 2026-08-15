@@ -28,8 +28,8 @@ def get_config_path() -> str:
     """
     if len(sys.argv) != 2:
         print(
-            "Please specify a config file: "
-            "python3 a_maze_ing.py [CONFIG NAME], nothing more or less",
+            "[USAGE_ERROR] Please specify a config file: "
+            "python3 a_maze_ing.py <config_file>, nothing more or less",
             file=sys.stderr
         )
         sys.exit(1)
@@ -81,8 +81,8 @@ def main() -> None:
 if __name__ == "__main__":
     try:
         main()
-    except MazegenError as exc:
-        print(f"error: {exc}", file=sys.stderr)
+    except MazegenError as e:
+        print(f"[MAZE_ERROR] {e}", file=sys.stderr)
         sys.exit(1)
     except ConfigError as e:
         print(e, file=sys.stderr)
