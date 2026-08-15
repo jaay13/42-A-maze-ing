@@ -11,7 +11,8 @@ Usage:
 
 import sys
 
-from app.config import ConfigError, load_config, parse_config
+from app.config import load_config, parse_config
+from app.errors import AppError
 from mazegen import MazeGenerator, MazegenError
 
 
@@ -84,7 +85,7 @@ if __name__ == "__main__":
     except MazegenError as e:
         print(f"[MAZE_ERROR] {e}", file=sys.stderr)
         sys.exit(1)
-    except ConfigError as e:
+    except AppError as e:
         print(e, file=sys.stderr)
         sys.exit(1)
     except (EOFError, KeyboardInterrupt):
