@@ -29,8 +29,9 @@ def load_config(path: str) -> dict[str, str]:
         A dict mapping each upper-cased key to its raw string value.
 
     Raises:
-        ConfigError: If the file doesn't exist, a non-blank/non-comment
-            line has no '=', a mandatory key is missing, or the file
+        ConfigError: If the file cannot be read at all (missing,
+            unreadable, a directory, ...), a non-blank/non-comment line
+            has no '=', a mandatory key is missing, or the file
             contains a key the program does not recognise.
     """
     config: dict[str, str] = {}
@@ -48,10 +49,10 @@ def load_config(path: str) -> dict[str, str]:
                     )
                 key, value = line.split("=", 1)
                 config[key.strip().upper()] = value.strip()
-    except FileNotFoundError:
+    except OSError as e:
         raise ConfigError(
-            f"[CONFIG_ERROR] No such file at following path '{path}' found"
-        )
+            f"[CONFIG_ERROR] {e.strerror}: '{path}'"
+        ) from e
     check_mandatory_keys(config)
     check_unknown_keys(config)
     return config
