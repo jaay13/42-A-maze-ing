@@ -1,3 +1,14 @@
+"""Entry point for A-Maze-ing.
+
+Reads a KEY=VALUE configuration file, generates a maze with the mazegen
+engine, displays it, and offers an interactive menu. Every error the
+user can trigger is reported as a single clean message on stderr with
+exit code 1; no traceback ever reaches the terminal.
+
+Usage:
+    python3 a_maze_ing.py config.txt
+"""
+
 import sys
 
 from app.config import ConfigError, load_config, parse_config
@@ -26,7 +37,7 @@ def main() -> None:
         entry=config["ENTRY"],
         exit=config["EXIT"],
         perfect=config["PERFECT"],
-        seed=int(config["SEED"]) if "SEED" in config else None,
+        seed=config.get("SEED"),
     )
     generator.generate()
 

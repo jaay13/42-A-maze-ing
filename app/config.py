@@ -10,7 +10,7 @@ class ConfigError(Exception):
     """Raised when config.txt is missing, malformed, or invalid.
 
     Args:
-        message: Human-readable description of what is wrong with the
+        message: Description of what is wrong with the
             config file, including enough detail (line number, key
             name, or path) for the user to fix it.
     """
@@ -30,7 +30,8 @@ def load_config(path: str) -> dict[str, str]:
 
     Raises:
         ConfigError: If the file doesn't exist, a non-blank/non-comment
-            line has no '=', or a mandatory key is missing.
+            line has no '=', a mandatory key is missing, or the file
+            contains a key the program does not recognise.
     """
     config: dict[str, str] = {}
     try:
@@ -52,6 +53,7 @@ def load_config(path: str) -> dict[str, str]:
             f"[CONFIG_ERROR] No such file at following path '{path}' found"
         )
     check_mandatory_keys(config)
+    check_unknown_keys(config)
     return config
 
 
@@ -73,10 +75,36 @@ def check_mandatory_keys(config: dict) -> None:
         )
 
 
+def check_unknown_keys(config: dict) -> None:
+    """Reject any config key the program does not recognise.
+
+    Unknown keys are an error rather than a silent pass-through so that
+    a typo in an optional key (e.g. 'SED' for 'SEED') fails loudly
+    instead of quietly changing behaviour. Adding a new key to the
+    config format therefore means registering it in
+    MANDATORY_CONFIG_KEYS or OPTIONAL_CONVERTERS.
+
+    Args:
+        config: The raw config dict returned by load_config.
+
+    Raises:
+        ConfigError: If the config contains one or more keys that are
+            neither mandatory nor optional, naming all of them in a
+            single message.
+    """
+    known_keys = set(MANDATORY_CONFIG_KEYS) | set(OPTIONAL_CONVERTERS)
+    remainder = set(config.keys()) - known_keys
+    if remainder:
+        unrecognised = ", ".join(sorted(remainder))
+        raise ConfigError(
+            f"[CONFIG_ERROR] The config has unrecognised keys: {unrecognised}"
+        )
+
+
 def parse_int(raw: str, key: str) -> int:
     """Convert a raw string into an int.
 
-    Used for WIDTH and HEIGHT.
+    Used for WIDTH, HEIGHT and SEED.
 
     Args:
         raw: The raw value string, e.g. '5'.
@@ -157,27 +185,37 @@ CONVERTERS = {
     "EXIT": parse_coords, "PERFECT": parse_bool
 }
 
+OPTIONAL_CONVERTERS = {
+    "SEED": parse_int
+}
+
 
 def parse_config(raw: dict) -> dict:
-    """Convert mandatory config values to their real types.
+    """Convert known config values to their real types.
 
     WIDTH/HEIGHT become int, ENTRY/EXIT become (int, int) tuples, and
-    PERFECT becomes bool. Every other key (e.g. OUTPUT_FILE, SEED) is
-    passed through unchanged.
+    PERFECT becomes bool. SEED becomes int, but only when the key is
+    present: an absent optional key stays absent rather than becoming
+    None. Every other key (e.g. OUTPUT_FILE) is passed through
+    unchanged.
 
     Args:
         raw: The raw string-valued dict returned by load_config.
 
     Returns:
-        A dict with the same keys as raw, but with mandatory values
+        A dict with the same keys as raw, but with known values
         converted to their proper types.
 
     Raises:
-        ConfigError: If any mandatory value fails its conversion.
+        ConfigError: If any known value fails its conversion.
     """
     typed_dict = {}
     for k, converter in CONVERTERS.items():
         typed_dict[k] = converter(raw[k], k)
+
+    for k, converter in OPTIONAL_CONVERTERS.items():
+        if k in raw:
+            typed_dict[k] = converter(raw[k], k)
 
     for k, v in raw.items():
         if k not in typed_dict:
