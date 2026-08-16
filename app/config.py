@@ -1,19 +1,10 @@
 """Config file loading and validation for a_maze_ing (Person B / app layer)."""
 
+from .errors import ConfigError
 
 MANDATORY_CONFIG_KEYS = [
     "WIDTH", "HEIGHT", "ENTRY", "EXIT", "OUTPUT_FILE", "PERFECT"
 ]
-
-
-class ConfigError(Exception):
-    """Raised when config.txt is missing, malformed, or invalid.
-
-    Args:
-        message: Description of what is wrong with the
-            config file, including enough detail (line number, key
-            name, or path) for the user to fix it.
-    """
 
 
 def load_config(path: str) -> dict[str, str]:

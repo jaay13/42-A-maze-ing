@@ -11,7 +11,9 @@ Usage:
 
 import sys
 
-from app.config import ConfigError, load_config, parse_config
+from app.config import load_config, parse_config
+from app.errors import AppError
+from app.output import write_output
 from mazegen import MazeGenerator, MazegenError
 
 
@@ -36,18 +38,53 @@ def get_config_path() -> str:
     return sys.argv[1]
 
 
+def generate_and_display(generator: MazeGenerator, config: dict) -> None:
+    """Generate a maze, write it to the output file, and print it.
+
+    Shared by the initial run and the menu's regenerate option so the
+    two cannot drift apart. Keeping the write in here is what stops
+    OUTPUT_FILE going stale after a regenerate: the file always
+    describes the maze currently on screen.
+
+    solve() is called once and its result reused, since the path in the
+    file and the path shown to the user must come from the same call.
+
+    Args:
+        generator: The generator to (re)run. Modified in place.
+        config: The typed config dict, read for OUTPUT_FILE, ENTRY and
+            EXIT.
+
+    Raises:
+        MazegenError: If the maze cannot be generated or solved.
+        OutputError: If the output file cannot be written.
+    """
+    generator.generate()
+    write_output(
+        config["OUTPUT_FILE"],
+        generator.to_rows(),
+        config["ENTRY"],
+        config["EXIT"],
+        generator.solve(),
+    )
+    for row in generator.to_rows():
+        print(row)
+    print(f"entry={config['ENTRY']} exit={config['EXIT']}")
+
+
 def main() -> None:
     """Load and validate the config, build a maze, and drive the CLI loop.
 
     Reads the config file named on the command line, builds a
-    MazeGenerator from the validated, typed config, prints the
-    generated maze, and loops offering the user a chance to regenerate
-    or quit. Exits 1 via get_config_path if the program was invoked
-    with anything other than exactly one argument.
+    MazeGenerator from the validated, typed config, then generates a
+    maze, writes it to OUTPUT_FILE and prints it. Loops offering the
+    user a chance to regenerate or quit; regenerating rewrites the
+    output file too. Exits 1 via get_config_path if the program was
+    invoked with anything other than exactly one argument.
 
     Raises:
         ConfigError: If the config file is missing, malformed, or
             invalid.
+        OutputError: If the output file cannot be written.
         MazegenError: If the maze parameters are invalid or the maze
             can't be generated/solved.
     """
@@ -61,21 +98,14 @@ def main() -> None:
         perfect=config["PERFECT"],
         seed=config.get("SEED"),
     )
-    generator.generate()
-
-    for row in generator.to_rows():
-        print(row)
-    print(f"entry={generator.entry} exit={generator.exit}")
-    print(" ".join(generator.solve()))
+    generate_and_display(generator, config)
 
     while True:
         choice = input("\n[r]egenerate, [q]uit: ").strip().lower()
         if choice == "q":
             break
         if choice == "r":
-            generator.generate()
-            for row in generator.to_rows():
-                print(row)
+            generate_and_display(generator, config)
 
 
 if __name__ == "__main__":
@@ -84,7 +114,7 @@ if __name__ == "__main__":
     except MazegenError as e:
         print(f"[MAZE_ERROR] {e}", file=sys.stderr)
         sys.exit(1)
-    except ConfigError as e:
+    except AppError as e:
         print(e, file=sys.stderr)
         sys.exit(1)
     except (EOFError, KeyboardInterrupt):
