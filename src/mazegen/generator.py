@@ -23,16 +23,6 @@ _OPPOSITE: dict[int, int] = {
     WEST: EAST,
 }
 
-# STUB — still used by generate() until the backtracker lands.
-# Hardcoded 5x5 so the app layer keeps working in the meantime.
-_STUB_GRID = [
-    [12, 10, 10, 10, 14],
-    [5, 12, 10, 10, 9],
-    [5, 6, 9, 12, 5],
-    [5, 3, 6, 5, 5],
-    [3, 2, 3, 6, 3],
-]
-
 
 class MazeGenerator:
     """Reusable maze engine. Public surface is frozen in INTERFACE.md."""
@@ -81,8 +71,40 @@ class MazeGenerator:
         self._grid[y][x] &= ~wall
         self._grid[ny][nx] &= ~_OPPOSITE[wall]
 
+    def _carve(self) -> None:
+        """Carve a perfect maze with an iterative recursive-backtracker.
+
+        An explicit stack is used instead of recursion so a 200x200
+        maze cannot blow the call stack at defence.
+        """
+        visited: list[list[bool]] = [
+            [False] * self.width for _ in range(self.height)
+        ]
+        start_x, start_y = self.entry
+        stack: list[tuple[int, int]] = [(start_x, start_y)]
+        visited[start_y][start_x] = True
+
+        while stack:
+            x, y = stack[-1]
+            options: list[tuple[int, int, int]] = []
+            for wall, (dx, dy) in _DELTA.items():
+                nx = x + dx
+                ny = y + dy
+                if self._in_bounds(nx, ny) and not visited[ny][nx]:
+                    options.append((nx, ny, wall))
+            if not options:
+                stack.pop()
+                continue
+            nx, ny, wall = self._rng.choice(options)
+            self._open_wall(x, y, wall)
+            visited[ny][nx] = True
+            stack.append((nx, ny))
+
     def generate(self) -> None:
-        self._grid = [row[: self.width] for row in _STUB_GRID[: self.height]]
+        # Re-seed so the same seed always rebuilds the same maze.
+        self._rng = random.Random(self.seed)
+        self._init_grid()
+        self._carve()
 
     @property
     def grid(self) -> list[list[int]]:
