@@ -16,6 +16,8 @@ walls closed with north and south open.
 
 WALL_BITS = {"N": 1, "E": 2, "S": 4, "W": 8}
 
+MOVES = {"N": (0, -1), "E": (1, 0), "S": (0, 1), "W": (-1, 0)}
+
 
 def is_closed(value: int, side: str) -> bool:
     """Report whether one wall of a cell is closed.
