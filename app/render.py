@@ -13,6 +13,7 @@ A bit that is SET means that wall is CLOSED; clear means open. So 15
 walls closed with north and south open.
 """
 
+from .errors import RenderError
 
 WALL_BITS = {"N": 1, "E": 2, "S": 4, "W": 8}
 
@@ -35,3 +36,51 @@ def is_closed(value: int, side: str) -> bool:
             surface rather than being converted to an AppError.
     """
     return bool(value & WALL_BITS[side])
+
+
+def path_cells(
+        entry: tuple[int, int],
+        solution: list[str],
+) -> set[tuple[int, int]]:
+    """Replay a solution path into the set of cells it visits.
+
+    MazeGenerator.solve() returns directions rather than positions,
+    which the output file can write as-is but the renderer cannot use:
+    drawing asks 'is this cell on the path?' once per cell, and that
+    question needs coordinates. Walking the letters once here turns
+    the answer into a set lookup instead of a re-walk per cell.
+
+    Never solves anything itself. The walk only follows the letters it
+    is given and never looks at a wall, so a wrong path is reproduced
+    faithfully rather than corrected.
+
+    Args:
+        entry: The (x, y) cell the path starts from, included in the
+            result: the set is every cell the walk visits, and the
+            walk starts before it has moved.
+        solution: The path as single-letter directions ('N', 'E', 'S',
+            'W'), as returned by MazeGenerator.solve().
+
+    Returns:
+        Every cell the walk visits, entry included. An empty solution
+        gives just the entry.
+
+    Raises:
+        RenderError: If a letter is not one of 'N', 'E', 'S', 'W'.
+            Unlike is_closed's KeyError this is bad engine data rather
+            than a mistake in app code, and it would otherwise reach
+            the terminal as a traceback.
+    """
+    ret = {entry}
+    x, y = entry
+    for index, letter in enumerate(solution):
+        if letter not in MOVES:
+            raise RenderError(
+                "[RENDER_ERROR] the engine returned an invalid direction "
+                f"'{letter}' at step {index}"
+            )
+        dx, dy = MOVES[letter]
+        x += dx
+        y += dy
+        ret.add((x, y))
+    return ret
