@@ -112,8 +112,11 @@ def draw_walls(grid: list[list[int]]) -> list[list[str]]:
     Args:
         grid: The maze as returned by MazeGenerator.grid, where
             grid[y][x] holds one cell's wall bits. Must have at least
-            one row and one column; WIDTH and HEIGHT are validated in
-            app.config, so no guard is repeated here.
+            one row and one column. Rejecting degenerate sizes is the
+            engine's job (split.md A8, raising InvalidDimensionError),
+            so no guard is repeated here; until that lands, a zero or
+            negative WIDTH reaches this function and its IndexError is
+            caught by the safety net in a_maze_ing.py.
 
     Returns:
         The canvas as rows of single characters, walls drawn and every
