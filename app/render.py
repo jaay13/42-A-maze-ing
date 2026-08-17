@@ -148,3 +148,49 @@ def draw_walls(grid: list[list[int]]) -> list[list[str]]:
         if is_closed(grid[y][width - 1], "E"):
             canvas[2 * y + 1][4 * width] = "|"
     return canvas
+
+
+def place_symbols(
+    canvas: list[list[str]],
+    entry: tuple[int, int],
+    exit_coords: tuple[int, int],
+    path: set[tuple[int, int]],
+    pattern: frozenset[tuple[int, int]],
+) -> None:
+    """Write the cell symbols onto a canvas that already has walls.
+
+    Cell (x, y)'s interior is the middle of the three columns between
+    its corners, at row 2*y+1 and column 4*x+2, matching the layout
+    draw_walls builds.
+
+    The four writes run in reverse order of precedence and simply
+    overwrite each other, so the required order 'S'/'E' > '*' > '#' >
+    blank is expressed by the order of the statements below rather
+    than by any test. Reordering them silently changes which symbol
+    wins, so they are not independent. The exit is written last
+    because a solved path always ends on it, and the exit marker has
+    to survive that.
+
+    Mutates the canvas rather than returning a new one, since it only
+    ever changes single characters at known positions.
+
+    Args:
+        canvas: The canvas from draw_walls, modified in place.
+        entry: The (x, y) entry cell, drawn as 'S'.
+        exit_coords: The (x, y) exit cell, drawn as 'E'. Named to
+            avoid shadowing the exit builtin, as in app.output.
+        path: Cells on the solution, from path_cells, drawn as '*'.
+        pattern: The '42' glyph cells from MazeGenerator.pattern_cells,
+            drawn as '#'. Empty when the maze is too small for it.
+    """
+    for x, y in pattern:
+        canvas[2 * y + 1][4 * x + 2] = "#"
+
+    for x, y in path:
+        canvas[2 * y + 1][4 * x + 2] = "*"
+
+    entry_x, entry_y = entry
+    canvas[2 * entry_y + 1][4 * entry_x + 2] = "S"
+
+    exit_x, exit_y = exit_coords
+    canvas[2 * exit_y + 1][4 * exit_x + 2] = "E"
