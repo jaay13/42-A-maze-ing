@@ -1,4 +1,7 @@
 import random
+from collections import deque
+
+from .errors import NoSolutionError
 
 # Subject IV.5: one hex digit per cell. A set bit means that wall is CLOSED.
 NORTH: int = 1  # bit 0
@@ -21,6 +24,13 @@ _OPPOSITE: dict[int, int] = {
     EAST: WEST,
     SOUTH: NORTH,
     WEST: EAST,
+}
+
+_DIR_LETTER: dict[int, str] = {
+    NORTH: "N",
+    EAST: "E",
+    SOUTH: "S",
+    WEST: "W",
 }
 
 
@@ -119,7 +129,48 @@ class MazeGenerator:
         return False
 
     def solve(self) -> list[str]:
-        return ["E"] * (self.width - 1) + ["S"] * (self.height - 1)
+        """Shortest path from entry to exit as N/E/S/W (BFS, not DFS)."""
+        start = self.entry
+        goal = self.exit
+        queue: deque[tuple[int, int]] = deque([start])
+        # Maps a cell to (previous cell, step letter). Start has none.
+        prev: dict[
+            tuple[int, int],
+            tuple[tuple[int, int], str] | None,
+        ] = {start: None}
+
+        found = False
+        while queue:
+            x, y = queue.popleft()
+            if (x, y) == goal:
+                found = True
+                break
+            for wall, (dx, dy) in _DELTA.items():
+                if self._grid[y][x] & wall:
+                    continue
+                nx = x + dx
+                ny = y + dy
+                if not self._in_bounds(nx, ny):
+                    continue
+                if (nx, ny) in prev:
+                    continue
+                prev[(nx, ny)] = ((x, y), _DIR_LETTER[wall])
+                queue.append((nx, ny))
+
+        if not found or goal not in prev:
+            raise NoSolutionError("no path from entry to exit")
+
+        path: list[str] = []
+        cur: tuple[int, int] = goal
+        while cur != start:
+            step = prev[cur]
+            if step is None:
+                break
+            parent, letter = step
+            path.append(letter)
+            cur = parent
+        path.reverse()
+        return path
 
     def to_rows(self) -> list[str]:
         """One hex digit per cell, row by row (Subject IV.5)."""
