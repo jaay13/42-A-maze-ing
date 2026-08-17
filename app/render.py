@@ -194,3 +194,54 @@ def place_symbols(
 
     exit_x, exit_y = exit_coords
     canvas[2 * exit_y + 1][4 * exit_x + 2] = "E"
+
+
+def render(
+    grid: list[list[int]],
+    entry: tuple[int, int],
+    exit_coords: tuple[int, int],
+    solution: list[str],
+    pattern: frozenset[tuple[int, int]],
+) -> list[str]:
+    """Render one maze as the lines to print.
+
+    Composes the two drawing steps: draw_walls builds the canvas from
+    the wall bits, place_symbols writes the cell markers onto it, and
+    the rows are joined into strings only at the end.
+
+    Takes the solution as raw direction letters and calls path_cells
+    itself, rather than accepting a ready-made set. The caller then has
+    no reason to touch solve() twice, which subject SS IV.5 and
+    split.md require: the path written to the output file and the path
+    drawn on screen must come from the same call.
+
+    Returns the lines instead of printing them so the output can be
+    compared without a terminal, which the B8 rehearsal harness needs.
+
+    Args:
+        grid: The maze, as MazeGenerator.grid.
+        entry: The (x, y) entry cell, from the config rather than the
+            generator, since entry/exit attributes are not part of the
+            frozen interface.
+        exit_coords: The (x, y) exit cell, same source.
+        solution: Direction letters from a single MazeGenerator.solve()
+            call.
+        pattern: MazeGenerator.pattern_cells; empty if the maze is too
+            small for the glyph.
+
+    Returns:
+        One string per canvas row, ready to print in order.
+
+    Raises:
+        RenderError: If the solution contains a letter that is not
+            'N', 'E', 'S' or 'W'. Raised by path_cells.
+    """
+    canvas = draw_walls(grid)
+    place_symbols(
+        canvas,
+        entry,
+        exit_coords,
+        path_cells(entry, solution),
+        pattern,
+    )
+    return ["".join(row) for row in canvas]
