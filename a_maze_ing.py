@@ -18,6 +18,7 @@ Usage:
 
 import sys
 
+from app.colour import PALETTE, colourise
 from app.config import load_config, parse_config
 from app.errors import AppError
 from app.output import write_output
@@ -114,6 +115,7 @@ def display_maze(
     config: dict,
     solution: list[str],
     show_path: bool,
+    colour_idx: int,
 ) -> None:
     """Draw the current maze to stdout.
 
@@ -153,6 +155,7 @@ def display_maze(
         generator.pattern_cells,
         show_path,
     )
+    lines = colourise(lines, PALETTE[colour_idx])
     for line in lines:
         print(line)
 
@@ -167,9 +170,10 @@ def main() -> None:
     generate_maze to produce and write the maze and display_maze to
     draw it. Then loops on the four-option menu from subject SS V:
     re-generate, show/hide the shortest path, rotate the wall colours,
-    and quit. Colour rotation is a placeholder until B6 lands; the
-    entry exists so the menu matches the subject and so B6 changes only
-    what the option does, not the loop around it. Re-generating runs
+    and quit. Colour rotation cycles the wall colour through
+    app.colour.PALETTE, wrapping with len(PALETTE); main owns the index
+    so the colour module never decides which colour comes next.
+    Re-generating runs
     both halves again, so the output file
     never goes stale; showing or hiding the path runs only display_maze,
     so it redraws the same maze without touching the file. Exits 1 via
@@ -196,6 +200,7 @@ def main() -> None:
     config_path = get_config_path()
     config = parse_config(load_config(config_path))
     show_path = False
+    colour_idx = 0
     generator = MazeGenerator(
         width=config["WIDTH"],
         height=config["HEIGHT"],
@@ -205,7 +210,7 @@ def main() -> None:
         seed=config.get("SEED"),
     )
     solution = generate_maze(generator, config)
-    display_maze(generator, config, solution, show_path)
+    display_maze(generator, config, solution, show_path, colour_idx)
 
     while True:
         print("=== A-Maze-ing ===")
@@ -220,13 +225,13 @@ def main() -> None:
         elif choice == "2":
             show_path = not show_path
         elif choice == "3":
-            print("\nColours coming in B6\n")
+            colour_idx = (colour_idx + 1) % len(PALETTE)
         elif choice == "4":
             break
         else:
             print(f"\nExpected input 1-4, got '{choice}' try again\n")
             continue
-        display_maze(generator, config, solution, show_path)
+        display_maze(generator, config, solution, show_path, colour_idx)
 
 
 if __name__ == "__main__":
