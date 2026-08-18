@@ -205,6 +205,7 @@ def render(
     exit_coords: tuple[int, int],
     solution: list[str],
     pattern: frozenset[tuple[int, int]],
+    show_path: bool,
 ) -> list[str]:
     """Render one maze as the lines to print.
 
@@ -231,6 +232,12 @@ def render(
             call.
         pattern: MazeGenerator.pattern_cells; empty if the maze is too
             small for the glyph.
+        show_path: Whether to draw the solution. When False the
+            maze is still rendered completely: walls, entry, exit and
+            the '42' glyph are unaffected -- only the path layer is
+            left off. The solution is still walked and validated
+            either way, so a bad direction letter raises whether the
+            path is on screen or not.
 
     Returns:
         One string per canvas row, ready to print in order.
@@ -240,11 +247,14 @@ def render(
             'N', 'E', 'S' or 'W'. Raised by path_cells.
     """
     canvas = draw_walls(grid)
+    solution_path = path_cells(entry, solution)
+    empty_path: set[tuple[int, int]] = set()
     place_symbols(
-        canvas,
-        entry,
-        exit_coords,
-        path_cells(entry, solution),
-        pattern,
-    )
+            canvas,
+            entry,
+            exit_coords,
+            solution_path if show_path else empty_path,
+            pattern,
+        )
+
     return ["".join(row) for row in canvas]
