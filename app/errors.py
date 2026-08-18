@@ -37,3 +37,22 @@ class OutputError(AppError):
         message: Description of what went wrong, including the output
             path, so the user can fix it.
     """
+
+
+class RenderError(AppError):
+    """Raised when the maze cannot be drawn for the terminal.
+
+    Separate from MazegenError because the app detects these, not the
+    engine: the engine returned successfully, but the data it handed
+    over does not match INTERFACE.md and so cannot be rendered. The
+    message names the engine as the cause even though the app is the
+    one reporting it.
+
+    No user input can trigger this, only a contract violation, so it
+    guards the cases where bad engine data would otherwise escape as a
+    traceback rather than every promise the interface makes.
+
+    Args:
+        message: Description of what could not be drawn, including the
+            offending value, so the engine bug can be traced.
+    """

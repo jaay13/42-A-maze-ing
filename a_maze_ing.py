@@ -14,6 +14,7 @@ import sys
 from app.config import load_config, parse_config
 from app.errors import AppError
 from app.output import write_output
+from app.render import render
 from mazegen import MazeGenerator, MazegenError
 
 
@@ -32,7 +33,7 @@ def get_config_path() -> str:
         print(
             "[USAGE_ERROR] Please specify a config file: "
             "python3 a_maze_ing.py <config_file>, nothing more or less",
-            file=sys.stderr
+            file=sys.stderr,
         )
         sys.exit(1)
     return sys.argv[1]
@@ -49,6 +50,12 @@ def generate_and_display(generator: MazeGenerator, config: dict) -> None:
     solve() is called once and its result reused, since the path in the
     file and the path shown to the user must come from the same call.
 
+    Subject SS IV.4 allows the '42' pattern to be omitted when the maze
+    is too small and asks for an error message in that case. It is only
+    a message: the maze is still generated, solved, written and drawn,
+    so nothing is skipped and the exit code stays 0. It goes to stderr
+    because the run succeeded and stdout holds the maze itself.
+
     Args:
         generator: The generator to (re)run. Modified in place.
         config: The typed config dict, read for OUTPUT_FILE, ENTRY and
@@ -59,15 +66,32 @@ def generate_and_display(generator: MazeGenerator, config: dict) -> None:
         OutputError: If the output file cannot be written.
     """
     generator.generate()
+
+    if not generator.has_pattern:
+        print(
+            "[PATTERN_ERROR] the maze is too small to fit the '42' "
+            "pattern, so it was left out",
+            file=sys.stderr,
+        )
+
+    solution = generator.solve()
     write_output(
         config["OUTPUT_FILE"],
         generator.to_rows(),
         config["ENTRY"],
         config["EXIT"],
-        generator.solve(),
+        solution,
     )
-    for row in generator.to_rows():
-        print(row)
+    lines = render(
+        generator.grid,
+        config["ENTRY"],
+        config["EXIT"],
+        solution,
+        generator.pattern_cells,
+    )
+    for line in lines:
+        print(line)
+
     print(f"entry={config['ENTRY']} exit={config['EXIT']}")
 
 
@@ -120,3 +144,14 @@ if __name__ == "__main__":
     except (EOFError, KeyboardInterrupt):
         print()
         sys.exit(0)
+    # Last resort (split.md:203). Subject SS IV.2 makes one traceback
+    # fatal, and the engine's parameter validation (A8) is not written
+    # yet, so bad WIDTH/HEIGHT/ENTRY/EXIT still reach the renderer as
+    # IndexError. This is a backstop, not error handling: anything it
+    # catches is a bug that deserves its own handler above.
+    except Exception as e:
+        print(
+            f"[INTERNAL_ERROR] unexpected {type(e).__name__}: {e}",
+            file=sys.stderr,
+        )
+        sys.exit(1)

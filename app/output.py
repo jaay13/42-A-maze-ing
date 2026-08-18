@@ -21,9 +21,14 @@ def format_output(
     on its own line, a single blank line, then three lines holding the
     entry coordinates, the exit coordinates and the solution path.
     Coordinates are written as 'x,y' with no parentheses, and the path
-    letters are separated by spaces so the file matches what the
-    renderer prints. Every line is terminated with '\\n', including the
-    last one.
+    letters are separated by spaces. Every line is terminated with
+    '\\n', including the last one.
+
+    The letters are written unchanged rather than as coordinates: the
+    file and the terminal render are two views of the same solve()
+    result, and app.render.path_cells converts the same letters into
+    the cells it draws. Both therefore describe one path, which the
+    evaluation cross-checks (split.md:112).
 
     Performs no I/O, so the format can be checked in isolation.
 
