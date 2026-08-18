@@ -41,7 +41,7 @@ def wall_map(grid: list[list[int]]) -> list[list[bool]]:
     return canvas
 
 
-def wall_painter(
+def render(
     grid: list[list[int]],
     entry: tuple[int, int],
     exit_coords: tuple[int, int],
