@@ -146,6 +146,11 @@ class MazeGenerator:
     def _place_pattern(self) -> None:
         """Stamp a 42 of fully closed cells, or skip if it cannot fit.
 
+        Subject pictures put the glyph in the middle of the maze. The
+        exact centre cell stays open (Pac-Man player start), so we pick
+        the valid offset whose glyph centre is closest to the maze
+        centre — not the first fit from the top-left.
+
         The app (Person B) prints the console message when has_pattern
         is False. The engine never prints.
         """
@@ -156,6 +161,10 @@ class MazeGenerator:
         forbidden = self._forbidden_cells()
         max_ox = self.width - _PATTERN_W
         max_oy = self.height - _PATTERN_H
+        mid_x = (self.width - 1) / 2
+        mid_y = (self.height - 1) / 2
+        best_dist: float | None = None
+        best_cells: list[tuple[int, int]] | None = None
         for oy in range(max_oy + 1):
             for ox in range(max_ox + 1):
                 cells = [
@@ -163,12 +172,18 @@ class MazeGenerator:
                 ]
                 if any(cell in forbidden for cell in cells):
                     continue
-                blocked = set(cells)
-                if not self._remainder_connected(blocked):
+                if not self._remainder_connected(set(cells)):
                     continue
-                self._pattern_cells = frozenset(cells)
-                self._has_pattern = True
-                return
+                glyph_x = ox + (_PATTERN_W - 1) / 2
+                glyph_y = oy + (_PATTERN_H - 1) / 2
+                dist = (glyph_x - mid_x) ** 2 + (glyph_y - mid_y) ** 2
+                if best_dist is None or dist < best_dist:
+                    best_dist = dist
+                    best_cells = cells
+        if best_cells is None:
+            return
+        self._pattern_cells = frozenset(best_cells)
+        self._has_pattern = True
 
     def _carve(self) -> None:
         """Carve a perfect maze with an iterative recursive-backtracker.
