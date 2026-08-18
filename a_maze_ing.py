@@ -11,7 +11,8 @@ Usage:
 
 import sys
 
-from app.colour import PALETTE, colourise
+from app import block_render
+from app.colour import PALETTE, colourise, use_colour
 from app.config import load_config, parse_config
 from app.errors import AppError
 from app.output import write_output
@@ -98,7 +99,10 @@ def display_maze(
     Args:
         generator: The generator holding the maze, read for grid and
             pattern_cells.
-        config: The typed config dict, read for ENTRY and EXIT.
+        config: The typed config dict, read for ENTRY, EXIT and
+            RENDERER. RENDERER is a preference only: a run whose
+            stdout is not a terminal falls back to plain ASCII
+            whatever it says, and defaults to blocks when absent.
         solution: Direction letters from the generate_maze call that
             produced the current maze.
         show_path: Whether to draw the solution as '*'.
@@ -108,15 +112,29 @@ def display_maze(
         RenderError: If the solution contains a direction letter that
             is not 'N', 'E', 'S' or 'W'. Raised by render.
     """
-    lines = render(
-        generator.grid,
-        config["ENTRY"],
-        config["EXIT"],
-        solution,
-        generator.pattern_cells,
-        show_path,
-    )
-    lines = colourise(lines, PALETTE[colour_idx])
+    coloured = use_colour()
+
+    if coloured and config.get("RENDERER", "blocks") == "blocks":
+        lines = block_render.render(
+            generator.grid,
+            config["ENTRY"],
+            config["EXIT"],
+            solution,
+            generator.pattern_cells,
+            show_path,
+            PALETTE[colour_idx],
+        )
+    else:
+        lines = render(
+            generator.grid,
+            config["ENTRY"],
+            config["EXIT"],
+            solution,
+            generator.pattern_cells,
+            show_path,
+        )
+        if coloured:
+            lines = colourise(lines, PALETTE[colour_idx])
     for line in lines:
         print(line)
 

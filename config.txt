@@ -7,3 +7,6 @@ PERFECT=false
 # Set SEED to get the same maze every run.
 # Menu option 1 then rebuilds the same maze every time.
 #SEED=42
+
+# Set RENDERER to print it in ASCII format instead of blocks
+#RENDERER=ascii

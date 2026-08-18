@@ -172,13 +172,40 @@ def parse_bool(raw: str, key: str) -> bool:
     return lower == "true"
 
 
+def parse_renderer(raw: str, key: str) -> str:
+    """Convert a raw string into a renderer name.
+
+    Used for RENDERER. The value is a preference, not a guarantee: a
+    run whose stdout is not a terminal falls back to plain ASCII
+    whatever this says.
+
+    Args:
+        raw: The raw value string, e.g. 'blocks' or 'ASCII'.
+        key: The config key this value came from, used in the error
+            message (e.g. 'RENDERER').
+
+    Returns:
+        'ascii' or 'blocks', lowercased.
+
+    Raises:
+        ConfigError: If raw is anything other than 'ascii'/'blocks'.
+    """
+    lower = raw.lower()
+    if not (lower == "ascii" or lower == "blocks"):
+        raise ConfigError(
+            f"[CONFIG_ERROR] '{key}' must be either ascii/blocks "
+            f"(case-insensitive), got '{raw}'"
+        )
+    return lower
+
+
 CONVERTERS = {
     "WIDTH": parse_int, "HEIGHT": parse_int, "ENTRY": parse_coords,
     "EXIT": parse_coords, "PERFECT": parse_bool
 }
 
 OPTIONAL_CONVERTERS = {
-    "SEED": parse_int
+    "SEED": parse_int, "RENDERER": parse_renderer
 }
 
 
@@ -186,10 +213,10 @@ def parse_config(raw: dict) -> dict:
     """Convert known config values to their real types.
 
     WIDTH/HEIGHT become int, ENTRY/EXIT become (int, int) tuples, and
-    PERFECT becomes bool. SEED becomes int, but only when the key is
-    present: an absent optional key stays absent rather than becoming
-    None. Every other key (e.g. OUTPUT_FILE) is passed through
-    unchanged.
+    PERFECT becomes bool. The optional keys SEED and RENDERER are
+    converted only when present: an absent optional key stays absent
+    rather than becoming None, so the caller supplies its own default.
+    Every other key (e.g. OUTPUT_FILE) is passed through unchanged.
 
     Args:
         raw: The raw string-valued dict returned by load_config.
