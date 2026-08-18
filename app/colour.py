@@ -1,5 +1,8 @@
 """ANSI colour for the ASCII maze renderer (Person B / app layer)."""
 
+import os
+import sys
+
 PALETTE = (39, 208, 42, 170, 245)
 """256-colour wall indices, ordered so consecutive rotations jump
 across the colour wheel rather than between neighbouring hues."""
@@ -67,3 +70,24 @@ def colourise(lines: list[str], wall: int) -> list[str]:
 
         coloured.append("".join(pieces))
     return coloured
+
+
+def use_colour() -> bool:
+    """Report whether ANSI escape sequences may be written to stdout.
+
+    All three conditions must hold, so colour is opt-out on three
+    independent grounds. NO_COLOR is tested for presence rather than
+    value, per the no-color.org convention: an empty value still means
+    no colour.
+
+    Returns:
+        True if stdout is a terminal that has not asked to be left
+        alone. Callers use this to choose a renderer, not only whether
+        to add colour, since block output is meaningless without a
+        terminal.
+    """
+    return (
+        sys.stdout.isatty()
+        and "NO_COLOR" not in os.environ
+        and os.environ.get("TERM") != "dumb"
+    )
