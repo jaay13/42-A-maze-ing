@@ -1,11 +1,14 @@
-"""ANSI colour for the ASCII maze renderer (Person B / app layer)."""
+"""ANSI colour for the terminal renderers (Person B / app layer)."""
 
 import os
 import sys
 
-PALETTE = (39, 208, 42, 170, 245)
-"""256-colour wall indices, ordered so consecutive rotations jump
-across the colour wheel rather than between neighbouring hues."""
+PALETTE = (39, 208, 42, 183)
+"""256-colour wall indices, in rotation order.
+
+Each has to read both as an ASCII stroke and as a block fill, so greys
+and near-whites are deliberately absent: they resemble default terminal
+text on one side and the feature colours on the other."""
 
 WALL_CHARS = "+-|"
 
