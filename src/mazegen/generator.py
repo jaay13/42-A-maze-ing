@@ -1,7 +1,11 @@
 import random
 from collections import deque
 
-from .errors import NoSolutionError
+from .errors import (
+    InvalidCoordinateError,
+    InvalidDimensionError,
+    NoSolutionError,
+)
 
 # Subject IV.5: one hex digit per cell. A set bit means that wall is CLOSED.
 NORTH: int = 1  # bit 0
@@ -74,6 +78,32 @@ class MazeGenerator:
         self._grid: list[list[int]] = []
         self._pattern_cells: frozenset[tuple[int, int]] = frozenset()
         self._has_pattern: bool = False
+        self._validate()
+
+    def _validate(self) -> None:
+        """Raise if size or entry/exit cannot make a maze.
+
+        Subject IV.4: entry and exit exist, differ, and lie inside the
+        grid. A 1xN strip or a negative size is not a maze, so those
+        fail here too — before generate() indexes the grid. Python
+        would otherwise treat ENTRY=-1,0 as the last cell of the row.
+        """
+        if self.width < 2 or self.height < 2:
+            raise InvalidDimensionError(
+                "width and height must be at least 2, "
+                f"got {self.width}x{self.height}"
+            )
+        if self.entry == self.exit:
+            raise InvalidCoordinateError(
+                "entry and exit must be different cells"
+            )
+        for name, cell in (("entry", self.entry), ("exit", self.exit)):
+            x, y = cell
+            if not self._in_bounds(x, y):
+                raise InvalidCoordinateError(
+                    f"{name} {cell} is outside the "
+                    f"{self.width}x{self.height} maze"
+                )
 
     def _in_bounds(self, x: int, y: int) -> bool:
         """True if (x, y) is a cell inside the maze."""
