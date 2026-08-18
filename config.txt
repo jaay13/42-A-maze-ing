@@ -4,4 +4,6 @@ ENTRY=0,0
 EXIT=14,14
 OUTPUT_FILE=maze.txt
 PERFECT=false
+# Set SEED to get the same maze every run.
+# Menu option 1 then rebuilds the same maze every time.
 #SEED=42
