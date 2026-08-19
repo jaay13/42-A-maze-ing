@@ -162,9 +162,12 @@ come from a single call to the engine's solver, so they cannot disagree.
 
 ![ASCII board with the solution path shown](img/ascii_board_2_false.png)
 
-**A maze smaller than 12x12 cannot fit the "42".** In that case it is left
-out and a `[PATTERN_ERROR]` notice is printed on stderr, as the subject
-allows; the program continues normally.
+**Not every maze size can fit the "42".** The glyph is 7x5 cells and the
+maze's centre has to stay open for it to sit beside, so a maze can be big
+enough by area and still have nowhere to put it: 9x9 fits it, 10x10 does
+not, 11x11 does again. When it cannot be placed it is simply left out and
+a `[PATTERN_ERROR]` notice is printed on stderr, as the subject allows —
+the program carries on normally and exits 0.
 
 ## Configuration file
 
