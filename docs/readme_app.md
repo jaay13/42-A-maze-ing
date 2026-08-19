@@ -28,6 +28,7 @@ Fragment for the final `README.md`, assembled at CP5 together with A's
   - [Example](#example)
 - [Output file](#output-file)
 - [Checking the output file](#checking-the-output-file)
+  - [The rehearsal harness](#the-rehearsal-harness)
 - [Error handling](#error-handling)
 - [Resources](#resources)
   - [How AI was used](#how-ai-was-used)
@@ -291,6 +292,54 @@ line.** It parses the entry and exit from the footer and discards the path,
 so a clean report says nothing about whether the path is correct or
 shortest. That check is done separately by the rehearsal harness in
 `not_for_submission/`.
+
+### The rehearsal harness
+
+The gap above — that the analyzer discards the path line — is covered by a
+separate script, `not_for_submission/b8_rehearsal.py`. It replays the
+evaluation scale before an evaluator does: it sabotages the config seven
+ways and checks each run dies cleanly, then checks each `PERFECT` mode's
+output file on several seeds.
+
+It is **not part of the submission**. It is written by Claude (see
+[How AI was used](#how-ai-was-used)), lives outside the shipped code, and
+nothing that ships imports it.
+
+Abridged output of a full run:
+
+```
+  case                     exit  lines  traceback  outfile  message
+  mandatory key removed      1      1         no   absent  ok  ("WIDTH")
+  line without '='           1      1         no   absent  ok  ("WIDTHIS15")
+  numbers -> letters         1      1         no   absent  ok  ("WIDTH")
+  bad boolean PERFECT        1      1         no   absent  ok  ("PERFECT")
+  malformed ENTRY tuple      1      1         no   absent  ok  ("ENTRY")
+  ENTRY out of bounds        1      1         no   absent  ok  ("ENTRY")
+  WIDTH=0                    1      1         no   absent  ok  ("WIDTH")
+  shipped config.txt         0      -         no        -  ok  (smoke)
+
+  PASS  8 pass  0 warn  0 fail
+
+  PERFECT=false   15x15  seed 42
+    entry/exit in file match the config ..................... ok
+    path walkable (crosses no closed wall) .................. ok  30 steps
+    path ends on EXIT, no cell revisited .................... ok
+    length == independent BFS ............................... ok  30 == 30
+    '*' on screen == cells path visits ...................... ok  29 cells
+    maze_analyzer verdict is Pac-Man-USABLE ................. ok
+    maze_analyzer wall coherence ............................ ok  OK (all shared walls match)
+    (bonus, not graded here: --max-dead-ends 0 -> yes)
+
+======================================================================
+RESULT: PASS  50 pass  0 warn  0 fail
+======================================================================
+```
+
+The check the analyzer cannot make is `length == independent BFS`: the
+harness runs its own breadth-first search over the grid it read back from
+the file and compares. It deliberately does not reuse the application's
+own path code — a checker that shares code with the thing it checks
+shares its bugs.
 
 ## Error handling
 
