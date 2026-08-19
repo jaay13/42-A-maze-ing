@@ -1,10 +1,27 @@
+# Virtual environments
 .venv/
+venv/
+
+# Byte-compiled files and tool caches
 __pycache__/
-*.pyc
+*.py[cod]
+.mypy_cache/
+.pytest_cache/
+
+# Packaging build output.
+# NOTE: the required mazegen-*.whl lives at the repo root, not in dist/,
+# so it is deliberately NOT ignored here.
 build/
 dist/
 *.egg-info/
-/subject.pdf
 
-# generated maze output (default OUTPUT_FILE)
+# macOS
+.DS_Store
+
+# Subject material -- not ours to redistribute
+not_for_submission/en.subject.pdf
+not_for_submission/eval.pdf
+
+
+# Generated maze output (default OUTPUT_FILE)
 maze.txt
