@@ -84,34 +84,39 @@ def generate_maze(generator: MazeGenerator, config: dict) -> list[str]:
     return solution
 
 
-def display_maze(
+def maze_lines(
     generator: MazeGenerator,
     config: dict,
     solution: list[str],
     show_path: bool,
     colour_idx: int,
-) -> None:
-    """Draw the current maze to stdout.
+) -> list[str]:
+    """Build the current maze as the lines to print.
 
-    Reads the generator and prints; changes nothing. That is what lets
-    the menu redraw the same maze with a different view.
+    Picks the renderer: coloured blocks when stdout is a terminal and
+    RENDERER asks for them, plain ASCII otherwise. RENDERER is only a
+    preference -- a run whose stdout is not a terminal falls back to
+    ASCII whatever it says, so redirected output never carries escape
+    sequences.
 
     Args:
         generator: The generator holding the maze, read for grid and
             pattern_cells.
         config: The typed config dict, read for ENTRY, EXIT and
-            RENDERER. RENDERER is a preference only: a run whose
-            stdout is not a terminal falls back to plain ASCII
-            whatever it says, and defaults to blocks when absent.
+            RENDERER. RENDERER defaults to blocks when absent.
         solution: Direction letters from the generate_maze call that
             produced the current maze.
         show_path: Whether to draw the solution as '*'.
         colour_idx: Index into app.colour.PALETTE for the wall colour.
 
+    Returns:
+        One string per canvas row, ready to print in order.
+
     Raises:
         RenderError: If the solution contains a direction letter that
             is not 'N', 'E', 'S' or 'W'. Raised by render.
     """
+
     coloured = use_colour()
 
     if coloured and config.get("RENDERER", "blocks") == "blocks":
@@ -135,6 +140,37 @@ def display_maze(
         )
         if coloured:
             lines = colourise(lines, PALETTE[colour_idx])
+    return lines
+
+
+def display_maze(
+    generator: MazeGenerator,
+    config: dict,
+    solution: list[str],
+    show_path: bool,
+    colour_idx: int,
+) -> None:
+    """Draw the current maze to stdout.
+
+    Reads the generator and prints; changes nothing. That is what lets
+    the menu redraw the same maze with a different view. The lines
+    come from maze_lines, so both halves cannot disagree about which
+    renderer ran.
+
+    Args:
+        generator: The generator holding the maze.
+        config: The typed config dict, read for ENTRY and EXIT here
+            and for RENDERER by maze_lines.
+        solution: Direction letters from the generate_maze call that
+            produced the current maze.
+        show_path: Whether to draw the solution as '*'.
+        colour_idx: Index into app.colour.PALETTE for the wall colour.
+
+    Raises:
+        RenderError: If the solution contains a direction letter that
+            is not 'N', 'E', 'S' or 'W'. Raised by maze_lines.
+    """
+    lines = maze_lines(generator, config, solution, show_path, colour_idx)
     for line in lines:
         print(line)
 
