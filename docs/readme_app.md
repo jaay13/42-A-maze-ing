@@ -27,6 +27,7 @@ Fragment for the final `README.md`, assembled at CP5 together with A's
   - [Unknown keys are rejected](#unknown-keys-are-rejected)
   - [Example](#example)
 - [Output file](#output-file)
+- [Checking the output file](#checking-the-output-file)
 - [Error handling](#error-handling)
 - [Resources](#resources)
   - [How AI was used](#how-ai-was-used)
@@ -232,6 +233,64 @@ path as direction letters **separated by single spaces**, e.g.
 The file always describes the maze currently generated. Hiding the
 path on screen does not remove it from the file — the subject requires
 it to be there.
+
+## Checking the output file
+
+The subject ships `maze_analyzer.py`, which reads an output file and reports
+whether the wall encoding is coherent and whether the maze matches the mode
+its config asked for:
+
+```
+python3 tools/maze_analyzer.py maze.txt
+```
+
+With the default board (`PERFECT=false`, 15x15, `SEED=42`):
+
+```
+Maze size        : 15 x 15 (225 cells)
+Entry            : (0, 0)   Exit: (14, 14) (reachable)
+Reachable region : 205 cells (0 corridor(s) unreachable)
+Independent loops: 23 / 154 possible (path ratio 15%)
+Dead-ends        : 0 real + 3 enclosed by the '42' (tolerated)
+Corners + centre : all reachable
+Wall coherence   : OK (all shared walls match)
+
+Verdict: Pac-Man-USABLE: fully connected, corners and centre reachable, 23 independent routes; no real dead-end -> bonus-grade (perfectly braided).
+```
+
+Zero real dead-ends means the board is *perfectly braided* — a chased player
+is never trapped anywhere. The subject lists that as a bonus in its own
+right, checkable with:
+
+```
+python3 tools/maze_analyzer.py maze.txt --max-dead-ends 0
+```
+
+The same settings with `PERFECT=true`:
+
+```
+Maze size        : 15 x 15 (225 cells)
+Entry            : (0, 0)   Exit: (14, 14) (reachable)
+Reachable region : 205 cells (0 corridor(s) unreachable)
+Independent loops: 0 / 154 possible (path ratio 0%)
+Dead-ends        : 23 real + 3 enclosed by the '42' (tolerated)
+Corners + centre : all reachable
+Wall coherence   : OK (all shared walls match)
+
+Verdict: PERFECT maze: a single path, no loop -> matches PERFECT=True (this is not a multi-route board for Pac-Man).
+```
+
+The 23 dead-ends there are not a fault: a perfect maze has exactly one route
+between any two cells, so every branch that is not on that route has to end
+somewhere. Zero loops is the defining property, and it is what the verdict
+keys on. The three dead-ends "enclosed by the '42'" are the glyph's own
+closed cells, which the subject explicitly permits.
+
+One limitation worth knowing: **the analyzer never reads the solution path
+line.** It parses the entry and exit from the footer and discards the path,
+so a clean report says nothing about whether the path is correct or
+shortest. That check is done separately by the rehearsal harness in
+`not_for_submission/`.
 
 ## Error handling
 
