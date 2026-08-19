@@ -3,6 +3,7 @@
 import os
 import sys
 import time
+from typing import Any
 
 from .display import maze_lines
 
@@ -25,7 +26,7 @@ def use_animation() -> bool:
 
 def animate_path(
     grid: list[list[int]],
-    config: dict,
+    config: dict[str, Any],
     solution: list[str],
     pattern: frozenset[tuple[int, int]],
     colour_idx: int,

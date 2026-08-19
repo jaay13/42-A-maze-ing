@@ -1,5 +1,7 @@
 """Choosing and building the maze view (Person B / app layer)."""
 
+from typing import Any
+
 from . import block_render
 from .colour import PALETTE, colourise, use_colour
 from .render import render
@@ -7,7 +9,7 @@ from .render import render
 
 def maze_lines(
     grid: list[list[int]],
-    config: dict,
+    config: dict[str, Any],
     solution: list[str],
     pattern: frozenset[tuple[int, int]],
     show_path: bool,
