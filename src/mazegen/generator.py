@@ -85,8 +85,8 @@ class MazeGenerator:
 
         Subject IV.4: entry and exit exist, differ, and lie inside the
         grid. A 1xN strip or a negative size is not a maze, so those
-        fail here too — before generate() indexes the grid. Python
-        would otherwise treat ENTRY=-1,0 as the last cell of the row.
+        fail here too, before generate() indexes the grid. Python would
+        otherwise treat ENTRY=-1,0 as the last cell of the row.
         """
         if self.width < 2 or self.height < 2:
             raise InvalidDimensionError(
@@ -182,7 +182,7 @@ class MazeGenerator:
         Subject pictures put the glyph in the middle of the maze. The
         exact centre cell stays open (Pac-Man player start), so we pick
         the valid offset whose glyph centre is closest to the maze
-        centre — not the first fit from the top-left.
+        centre, not the first fit from the top-left.
 
         The app (Person B) prints the console message when has_pattern
         is False. The engine never prints.
@@ -226,6 +226,11 @@ class MazeGenerator:
     def _carve(self) -> None:
         """Carve a perfect maze with an iterative recursive-backtracker.
 
+        Start at the entry. Walk into a random unvisited neighbour and
+        knock the wall down. Dead end: pop the stack and try another
+        neighbour. Pattern cells are marked visited first, so they stay
+        fully closed and the walk goes around them.
+
         An explicit stack is used instead of recursion so a 200x200
         maze cannot blow the call stack at defence.
         """
@@ -268,7 +273,12 @@ class MazeGenerator:
         return n
 
     def _block_is_open_3x3(self, x: int, y: int) -> bool:
-        """True if the 3x3 with top-left (x, y) has no internal walls."""
+        """True if the 3x3 with top-left (x, y) has no internal walls.
+
+        Only east walls inside the window and south walls inside the
+        window matter. The outer edge of the 3x3 is the hall boundary,
+        not an internal opening.
+        """
         for dy in range(3):
             for dx in range(2):
                 if self._grid[y + dy][x + dx] & EAST:
@@ -288,10 +298,11 @@ class MazeGenerator:
         return False
 
     def _creates_open_3x3(self, x: int, y: int, wall: int) -> bool:
-        """True if opening this wall would make a 3x3 hall (A7).
+        """True if opening this wall would make a 3x3 hall.
 
-        Open, inspect, restore — the check lives in the removal loop,
-        not as a cleanup pass afterwards (eval asks how we verify).
+        Open, inspect, restore. The eval asks how the 3x3 rule is
+        verified: the check lives in the removal loop, not as a cleanup
+        pass afterwards.
         """
         dx, dy = _DELTA[wall]
         nx = x + dx
@@ -363,7 +374,7 @@ class MazeGenerator:
                 return
 
     def _key_cells(self) -> set[tuple[int, int]]:
-        """Corners plus centre — Pac-Man start / ghost seats."""
+        """Corners plus centre: Pac-Man start / ghost seats."""
         w = self.width
         h = self.height
         cells: set[tuple[int, int]] = {
@@ -394,7 +405,13 @@ class MazeGenerator:
                     break
 
     def generate(self) -> None:
-        # Re-seed so the same seed always rebuilds the same maze.
+        """Build the maze in a fixed order.
+
+        Re-seed first so the same seed always rebuilds the same maze.
+        Stamp the 42 (or skip it), then carve a perfect maze. If
+        PERFECT is false, braid dead-ends and open corners plus centre.
+        Each extra opening is refused if it would create a 3x3 hall.
+        """
         self._rng = random.Random(self.seed)
         self._init_grid()
         self._place_pattern()
@@ -416,7 +433,12 @@ class MazeGenerator:
         return self._has_pattern
 
     def solve(self) -> list[str]:
-        """Shortest path from entry to exit as N/E/S/W (BFS, not DFS)."""
+        """Shortest path from entry to exit as N/E/S/W.
+
+        BFS, not DFS: popleft spreads in waves, so the first time the
+        exit is reached the route is the shortest. The app must call
+        this once and reuse the list for the file and the screen.
+        """
         start = self.entry
         goal = self.exit
         queue: deque[tuple[int, int]] = deque([start])
