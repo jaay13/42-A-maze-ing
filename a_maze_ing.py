@@ -11,12 +11,12 @@ Usage:
 
 import sys
 
-from app import block_render
-from app.colour import PALETTE, colourise, use_colour
+from app.animate import DEFAULT_DELAY_MS, animate_path, use_animation
+from app.colour import PALETTE
 from app.config import load_config, parse_config
+from app.display import maze_lines
 from app.errors import AppError
 from app.output import write_output
-from app.render import render
 from mazegen import MazeGenerator, MazegenError
 
 
@@ -84,65 +84,6 @@ def generate_maze(generator: MazeGenerator, config: dict) -> list[str]:
     return solution
 
 
-def maze_lines(
-    generator: MazeGenerator,
-    config: dict,
-    solution: list[str],
-    show_path: bool,
-    colour_idx: int,
-) -> list[str]:
-    """Build the current maze as the lines to print.
-
-    Picks the renderer: coloured blocks when stdout is a terminal and
-    RENDERER asks for them, plain ASCII otherwise. RENDERER is only a
-    preference -- a run whose stdout is not a terminal falls back to
-    ASCII whatever it says, so redirected output never carries escape
-    sequences.
-
-    Args:
-        generator: The generator holding the maze, read for grid and
-            pattern_cells.
-        config: The typed config dict, read for ENTRY, EXIT and
-            RENDERER. RENDERER defaults to blocks when absent.
-        solution: Direction letters from the generate_maze call that
-            produced the current maze.
-        show_path: Whether to draw the solution as '*'.
-        colour_idx: Index into app.colour.PALETTE for the wall colour.
-
-    Returns:
-        One string per canvas row, ready to print in order.
-
-    Raises:
-        RenderError: If the solution contains a direction letter that
-            is not 'N', 'E', 'S' or 'W'. Raised by render.
-    """
-
-    coloured = use_colour()
-
-    if coloured and config.get("RENDERER", "blocks") == "blocks":
-        lines = block_render.render(
-            generator.grid,
-            config["ENTRY"],
-            config["EXIT"],
-            solution,
-            generator.pattern_cells,
-            show_path,
-            PALETTE[colour_idx],
-        )
-    else:
-        lines = render(
-            generator.grid,
-            config["ENTRY"],
-            config["EXIT"],
-            solution,
-            generator.pattern_cells,
-            show_path,
-        )
-        if coloured:
-            lines = colourise(lines, PALETTE[colour_idx])
-    return lines
-
-
 def display_maze(
     generator: MazeGenerator,
     config: dict,
@@ -170,7 +111,14 @@ def display_maze(
         RenderError: If the solution contains a direction letter that
             is not 'N', 'E', 'S' or 'W'. Raised by maze_lines.
     """
-    lines = maze_lines(generator, config, solution, show_path, colour_idx)
+    lines = maze_lines(
+        generator.grid,
+        config,
+        solution,
+        generator.pattern_cells,
+        show_path,
+        colour_idx,
+    )
     for line in lines:
         print(line)
 
@@ -222,6 +170,16 @@ def main() -> None:
             solution = generate_maze(generator, config)
         elif choice == "2":
             show_path = not show_path
+            delay = config.get("ANIMATION_DELAY", DEFAULT_DELAY_MS)
+            if show_path and delay and use_animation():
+                animate_path(
+                    generator.grid,
+                    config,
+                    solution,
+                    generator.pattern_cells,
+                    colour_idx,
+                    delay,
+                )
         elif choice == "3":
             colour_idx = (colour_idx + 1) % len(PALETTE)
         elif choice == "4":

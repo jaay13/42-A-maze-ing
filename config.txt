@@ -10,3 +10,7 @@ PERFECT=false
 
 # Set RENDERER to print it in ASCII format instead of blocks
 #RENDERER=ascii
+
+# Set ANIMATION_DELAY to change the solution reveal speed.
+# Milliseconds per frame when showing the path; 0 turns it off.
+#ANIMATION_DELAY=30

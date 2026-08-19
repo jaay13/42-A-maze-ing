@@ -199,13 +199,42 @@ def parse_renderer(raw: str, key: str) -> str:
     return lower
 
 
+def parse_delay(raw: str, key: str) -> int:
+    """Convert a raw string into a frame delay in milliseconds.
+
+    Used for ANIMATION_DELAY. Zero disables the animation.
+
+    Args:
+        raw: The raw value string, e.g. '30'.
+        key: The config key this value came from, used in the error
+            message.
+
+    Returns:
+        The delay in milliseconds, zero or more.
+
+    Raises:
+        ConfigError: If raw is not an integer, or is negative. A
+            negative delay would otherwise reach time.sleep and raise,
+            landing in the last-resort handler instead of being
+            reported as the config error it is.
+    """
+    ms = parse_int(raw, key)
+    if ms < 0:
+        raise ConfigError(
+            f"[CONFIG_ERROR] '{key}' must be zero or more milliseconds, "
+            f"got '{raw}'"
+        )
+    return ms
+
+
 CONVERTERS = {
     "WIDTH": parse_int, "HEIGHT": parse_int, "ENTRY": parse_coords,
     "EXIT": parse_coords, "PERFECT": parse_bool
 }
 
 OPTIONAL_CONVERTERS = {
-    "SEED": parse_int, "RENDERER": parse_renderer
+    "SEED": parse_int, "RENDERER": parse_renderer,
+    "ANIMATION_DELAY": parse_delay
 }
 
 
