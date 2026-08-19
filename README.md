@@ -21,13 +21,21 @@
 - [Error handling](#error-handling)
 - [Chosen algorithm](#chosen-algorithm)
 - [How the engine is put together](#how-the-engine-is-put-together)
+- [Maze generation (eval answers)](#maze-generation-eval-answers)
+  - [Random and seed](#random-and-seed)
+  - [Bad parameters](#bad-parameters)
+  - [Reachability, outer walls, coherence](#reachability-outer-walls-coherence)
+  - [The 3x3 rule](#the-3x3-rule)
+  - [The 42 pattern](#the-42-pattern)
+  - [PERFECT vs Pac-Man](#perfect-vs-pac-man)
+  - [How we check both modes](#how-we-check-both-modes)
 - [Reusable module](#reusable-module)
-  - [Install](#install)
+  - [Rebuild the package (eval, two virtualenvs)](#rebuild-the-package-eval-two-virtualenvs)
   - [Instantiate and generate](#instantiate-and-generate)
   - [Parameters](#parameters)
   - [Structure and solution](#structure-and-solution)
   - [Errors](#errors-all-subclass-mazegenerror)
-  - [License](#license)
+  - [Why MIT](#why-mit)
 - [Resources](#resources)
   - [How AI was used](#how-ai-was-used)
 - [Team and project management](#team-and-project-management)
@@ -75,18 +83,13 @@ Other targets:
 `requirements-dev.txt` pins flake8 and mypy exactly, so a fresh clone
 lints with the same versions rather than whatever is newest.
 
-To rebuild the installable package (what the eval asks you to do live):
+The Git root must contain `README.md`, `LICENSE.md`, `a_maze_ing.py`,
+`config.txt`, `mazegen-*.whl` (or `.tar.gz`), and `pyproject.toml` so
+the package can be rebuilt. `make lint` must pass on the Python files.
 
-```
-python3 -m pip install build
-python3 -m build
-# then copy dist/mazegen-1.0.0-py3-none-any.whl to the repo root
-pip install mazegen-1.0.0-py3-none-any.whl
-python3 a_maze_ing.py config.txt
-```
-
-`make clean` deletes `dist/`. It does not delete the wheel in the repo
-root. That root copy is the one git tracks.
+The live rebuild (one venv to build, a second venv to install the
+wheel, `PYTHONPATH` unset) is spelled out under
+[Rebuild the package](#rebuild-the-package-eval-two-virtualenvs).
 
 ### Menu
 
@@ -97,7 +100,9 @@ root. That root copy is the one git tracks.
 | 3 | change the wall colour |
 | 4 | quit |
 
-The path starts hidden. Any other input prints a short hint and asks
+The path starts hidden. Menu key `2` shows it. If `ANIMATION_DELAY` is
+set and stdout is a terminal, the path is drawn one step at a time
+before the full board. Any other input prints a short hint and asks
 again. Ctrl-D and Ctrl-C both quit cleanly.
 
 ## Example output
@@ -206,11 +211,16 @@ case.
 |---|---|---|---|
 | `SEED` | integer | none (random) | same seed, same maze |
 | `RENDERER` | `blocks` / `ascii` | `blocks` | preferred display style |
+| `ANIMATION_DELAY` | integer milliseconds | on | path reveal speed; `0` turns animation off |
 
 `RENDERER` is a preference, not a guarantee. Coloured blocks are used
 only when stdout is a terminal, `NO_COLOR` is unset and `TERM` is not
 `dumb`; otherwise the output is plain ASCII with no escape sequences,
 so redirecting to a file always produces something readable.
+
+`ANIMATION_DELAY` is also a preference: animation only runs when
+showing the path, on a real terminal. Piped or redirected output skips
+it.
 
 ### Unknown keys are rejected
 
@@ -231,6 +241,7 @@ OUTPUT_FILE=maze.txt
 PERFECT=false
 # SEED=42
 # RENDERER=ascii
+# ANIMATION_DELAY=30
 ```
 
 ## Output file
@@ -456,6 +467,119 @@ that cell, restore the wall if any window would be fully open.
 The engine never prints. Bad input raises a `MazegenError` subclass.
 The app catches that and turns it into one line on stderr.
 
+## Maze generation (eval answers)
+
+These are the maze-generator questions on the scale sheet, in the same
+order, with how we meet them.
+
+### Random and seed
+
+Generation uses Python's `random.Random`. `generate()` re-seeds at the
+start, so the same `SEED` always rebuilds the same maze. Leave `SEED`
+commented out for a new maze on every run, including menu key `1`.
+
+### Bad parameters
+
+`MazeGenerator.__init__` calls `_validate()` before any grid exists:
+
+- width or height below 2 (including negatives and 1xN strips) raises
+  `InvalidDimensionError`
+- entry equal to exit, or a coordinate outside the grid, raises
+  `InvalidCoordinateError`
+
+Python would treat `ENTRY=-1,0` as the last cell of the row. We reject
+that up front. The engine does not print. The app prints one
+`[MAZE_ERROR]` line and exits 1.
+
+### Reachability, outer walls, coherence
+
+After generation, every corridor is reachable from the entry. The only
+cells that may be unreachable are the fully closed "42" cells, which
+the subject allows.
+
+The outer border never opens: `_open_wall` looks for a neighbour, and
+if there is none it returns without clearing the bit. That is "walls
+all around the maze".
+
+Shared walls always match. Opening east on cell A also opens west on
+cell B, in the same function. `maze_analyzer.py` reports
+`Wall coherence : OK` when that holds.
+
+### The 3x3 rule
+
+Corridors may be two cells wide. A 3x3 block of cells with every
+internal wall gone is forbidden. The eval asks how this was
+implemented or verified, so here is the actual method.
+
+It is not a cleanup pass at the end. `_try_open` calls
+`_creates_open_3x3` *before* a wall stays open:
+
+1. Remember the two cells' old values.
+2. Open the wall (both sides).
+3. Scan every 3x3 window in the grid (`_has_open_3x3`).
+4. Restore the two cells.
+5. If any window was fully open, refuse that wall. Otherwise open it
+   for real.
+
+`_block_is_open_3x3` only looks at internal east and south walls of
+the nine cells. Outer walls of the window are the edge of the hall,
+not the inside.
+
+This runs on every extra opening in Pac-Man mode (`_braid` and
+`_open_key_cells`). The perfect-maze carve never creates a 3x3 hall,
+because it only knocks down the wall into an *unvisited* cell.
+
+### The 42 pattern
+
+The glyph is 7x5 fully closed cells (a "4", a one-cell gap, a "2").
+It is stamped *before* the carve, and those cells are marked visited,
+so the backtracker walks around them.
+
+It must not cover the entry, the exit, a corner, or *every* centre
+cell (Pac-Man's start). On even sizes the analyser treats a 2x2 as
+"the centre"; keeping one of those four as a corridor is enough, so
+the glyph can still sit in the middle.
+
+If the maze is too small to place it under those rules, we skip it.
+`has_pattern` is `False`. The engine stays silent. The app prints
+`[PATTERN_ERROR]` on stderr and continues with exit code 0, which is
+what the subject asks for.
+
+### PERFECT vs Pac-Man
+
+Both modes start the same way: stamp the 42, then carve a perfect
+maze.
+
+**`PERFECT=true`.** Stop there. Exactly one path between any two
+corridor cells, no loops. `maze_analyzer.py` must say `PERFECT maze`.
+Dead-ends are expected: every branch that is not on the unique path
+has to end somewhere.
+
+**`PERFECT=false` (the default).** After the carve, `_braid` opens
+dead-ends (each opening still goes through the 3x3 check), then
+`_open_key_cells` gives the four corners and the centre a second
+exit when that is legal. Result: full connectivity, corners and
+centre are corridors, at least two independent routes. A couple of
+real dead-ends are tolerated. Zero real dead-ends is the braided
+bonus; check with `--max-dead-ends 0`. A perfect maze with one wall
+pulled down is not enough, and we do not do that.
+
+### How we check both modes
+
+```
+python3 tools/maze_analyzer.py maze.txt
+```
+
+Generate once with `PERFECT=true` and once with `PERFECT=false`. The
+script must report `PERFECT maze` for the first and `Pac-Man-USABLE`
+for the second. It also checks wall coherence, that corners and centre
+are reachable, and the loop / dead-end counts.
+
+The analyser does *not* read the path line in the file. The file path
+and the `*` on screen both come from one `solve()` call (BFS). The
+rehearsal harness in `not_for_submission/` walks the file path and
+compares its length to an independent BFS.
+
 ## Reusable module
 
 `mazegen` is a normal pip package. The class you import is
@@ -464,23 +588,39 @@ The app catches that and turns it into one line on stderr.
 
 The same short documentation lives in `docs/readme_engine.md`.
 
-### Install
+### Rebuild the package (eval, two virtualenvs)
 
-From this repo, after a rebuild:
+The scale sheet asks you to rebuild the package in one virtualenv,
+then install that new file in a *different* virtualenv, then run
+`a_maze_ing.py`. Do not use `pip install -e .` for that test. Editable
+install still points at `src/`, so you would not be testing the wheel.
+
+Unset `PYTHONPATH` if it contains `src`. Otherwise `import mazegen`
+picks up the live tree and the wheel was never used.
 
 ```
-pip install mazegen-1.0.0-py3-none-any.whl
+# virtualenv 1: rebuild
+python3 -m venv /tmp/mazegen-build
+source /tmp/mazegen-build/bin/activate
+pip install build
+python3 -m build
+cp dist/mazegen-1.0.0-py3-none-any.whl .
+deactivate
+
+# virtualenv 2: install only the wheel, then run the app
+python3 -m venv /tmp/mazegen-run
+source /tmp/mazegen-run/bin/activate
+unset PYTHONPATH
+pip install ./mazegen-1.0.0-py3-none-any.whl
+python3 -c "import mazegen; print(mazegen.__file__)"
+# that path must be .../site-packages/mazegen/..., not this repo's src/
+python3 a_maze_ing.py config.txt
 ```
 
-Or during development:
+`make clean` deletes `dist/`. It does not delete the wheel in the
+repo root. That root copy is the one git tracks.
 
-```
-pip install -e .
-```
-
-The eval rebuilds the wheel in one virtualenv and installs that wheel
-in a *second* virtualenv, then runs `a_maze_ing.py`. That only works if
-`mazegen` comes from site-packages, not from `src/` on `PYTHONPATH`.
+During day-to-day work, `make install` (`pip install -e .`) is fine.
 
 ### Instantiate and generate
 
@@ -541,11 +681,16 @@ as a crash.
 Catch `MazegenError` if you only care that the engine refused. Catch
 the subclass if you want to tell the kinds apart.
 
-### License
+### Why MIT
 
-`LICENSE.md` is MIT. The later Pac-Man project has to reuse and
-redistribute this generator, so the license has to say that in plain
-words. MIT does.
+`LICENSE.md` is the MIT license. The subject (and the later Pac-Man
+project) require a license that explicitly allows reuse and
+redistribution of the maze generator. MIT says that in one short page:
+anyone may use, copy, modify, merge, publish, distribute, sublicense,
+and sell the software, as long as the copyright notice stays with it.
+There is no copyleft, so a later game can ship the engine without
+opening the rest of the game. That is the pedagogical point of
+`LICENSE.md`, not a decoration.
 
 ## Resources
 

@@ -176,8 +176,10 @@ as a crash.
 Catch `MazegenError` if you only care that the engine refused. Catch
 the subclass if you want to tell the kinds apart.
 
-### License
+### Why MIT
 
-`LICENSE.md` is MIT. The later Pac-Man project has to reuse and
-redistribute this generator, so the license has to say that in plain
-words. MIT does.
+`LICENSE.md` is the MIT license. The later Pac-Man project has to reuse
+and redistribute this generator. MIT says that in one page, without
+copyleft. The full eval answers (3x3, 42, PERFECT vs Pac-Man, two-venv
+rebuild) live in the root `README.md` under "Maze generation (eval
+answers)" and "Rebuild the package".
