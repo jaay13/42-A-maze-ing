@@ -320,100 +320,13 @@ It is **not part of the submission**. It is written by Claude (see
 [How AI was used](#how-ai-was-used)), lives outside the shipped code, and
 nothing that ships imports it.
 
-<details>
-<summary>Full output of a default run</summary>
+A clean run ends with:
 
 ```
-A-Maze-ing defence rehearsal
-repo /Users/jayjoe/Documents/42Berlin/projects/all_amazeing
-
-SCALE: Configuration file > Error Management
-  "Edit the configuration file to ensure that the program
-   correctly handles its errors."
-
-  case                     exit  lines  traceback  outfile  message
-  mandatory key removed      1      1         no   absent  ok  ("WIDTH")
-  line without '='           1      1         no   absent  ok  ("WIDTHIS15")
-  numbers -> letters         1      1         no   absent  ok  ("WIDTH")
-  bad boolean PERFECT        1      1         no   absent  ok  ("PERFECT")
-  malformed ENTRY tuple      1      1         no   absent  ok  ("ENTRY")
-  ENTRY out of bounds        1      1         no   absent  ok  ("ENTRY")
-  WIDTH=0                    1      1         no   absent  ok  ("WIDTH")
-  shipped config.txt         0      -         no        -  ok  (smoke)
-
-  PASS  8 pass  0 warn  0 fail
-
-SCALE: Output file > Format
-  "Control that the shortest path sequence in the output
-   file matches the visual representation."
-  "Generate one maze with each value of PERFECT and run the
-   analysis script on each output file."
-
-  PERFECT=true    15x15  seed 42
-    entry/exit in file match the config ..................... ok
-    path walkable (crosses no closed wall) .................. ok  132 steps
-    path ends on EXIT, no cell revisited .................... ok
-    length == independent BFS ............................... ok  132 == 132
-    '*' on screen == cells path visits ...................... ok  131 cells
-    maze_analyzer verdict is PERFECT maze ................... ok
-    maze_analyzer wall coherence ............................ ok  OK (all shared walls match)
-
-  PERFECT=true    15x15  seed 7
-    entry/exit in file match the config ..................... ok
-    path walkable (crosses no closed wall) .................. ok  90 steps
-    path ends on EXIT, no cell revisited .................... ok
-    length == independent BFS ............................... ok  90 == 90
-    '*' on screen == cells path visits ...................... ok  89 cells
-    maze_analyzer verdict is PERFECT maze ................... ok
-    maze_analyzer wall coherence ............................ ok  OK (all shared walls match)
-
-  PERFECT=true    15x15  seed 1234
-    entry/exit in file match the config ..................... ok
-    path walkable (crosses no closed wall) .................. ok  64 steps
-    path ends on EXIT, no cell revisited .................... ok
-    length == independent BFS ............................... ok  64 == 64
-    '*' on screen == cells path visits ...................... ok  63 cells
-    maze_analyzer verdict is PERFECT maze ................... ok
-    maze_analyzer wall coherence ............................ ok  OK (all shared walls match)
-
-  PERFECT=false   15x15  seed 42
-    entry/exit in file match the config ..................... ok
-    path walkable (crosses no closed wall) .................. ok  30 steps
-    path ends on EXIT, no cell revisited .................... ok
-    length == independent BFS ............................... ok  30 == 30
-    '*' on screen == cells path visits ...................... ok  29 cells
-    maze_analyzer verdict is Pac-Man-USABLE ................. ok
-    maze_analyzer wall coherence ............................ ok  OK (all shared walls match)
-    (bonus, not graded here: --max-dead-ends 0 -> yes)
-
-  PERFECT=false   15x15  seed 7
-    entry/exit in file match the config ..................... ok
-    path walkable (crosses no closed wall) .................. ok  36 steps
-    path ends on EXIT, no cell revisited .................... ok
-    length == independent BFS ............................... ok  36 == 36
-    '*' on screen == cells path visits ...................... ok  35 cells
-    maze_analyzer verdict is Pac-Man-USABLE ................. ok
-    maze_analyzer wall coherence ............................ ok  OK (all shared walls match)
-    (bonus, not graded here: --max-dead-ends 0 -> yes)
-
-  PERFECT=false   15x15  seed 1234
-    entry/exit in file match the config ..................... ok
-    path walkable (crosses no closed wall) .................. ok  46 steps
-    path ends on EXIT, no cell revisited .................... ok
-    length == independent BFS ............................... ok  46 == 46
-    '*' on screen == cells path visits ...................... ok  45 cells
-    maze_analyzer verdict is Pac-Man-USABLE ................. ok
-    maze_analyzer wall coherence ............................ ok  OK (all shared walls match)
-    (bonus, not graded here: --max-dead-ends 0 -> yes)
-
-  PASS  42 pass  0 warn  0 fail
-
 ======================================================================
 RESULT: PASS  50 pass  0 warn  0 fail
 ======================================================================
 ```
-
-</details>
 
 The check nothing else makes is `length == independent BFS`: the harness
 runs its own breadth-first search over the grid it reads back from the
