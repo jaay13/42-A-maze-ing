@@ -12,12 +12,12 @@ Usage:
 import sys
 from typing import Any
 
-from app import block_render
-from app.colour import PALETTE, colourise, use_colour
+from app.animate import DEFAULT_DELAY_MS, animate_path, use_animation
+from app.colour import PALETTE
 from app.config import load_config, parse_config
+from app.display import maze_lines
 from app.errors import AppError
 from app.output import write_output
-from app.render import render
 from mazegen import MazeGenerator, MazegenError
 
 
@@ -98,15 +98,14 @@ def display_maze(
     """Draw the current maze to stdout.
 
     Reads the generator and prints; changes nothing. That is what lets
-    the menu redraw the same maze with a different view.
+    the menu redraw the same maze with a different view. The lines
+    come from maze_lines, so both halves cannot disagree about which
+    renderer ran.
 
     Args:
-        generator: The generator holding the maze, read for grid and
-            pattern_cells.
-        config: The typed config dict, read for ENTRY, EXIT and
-            RENDERER. RENDERER is a preference only: a run whose
-            stdout is not a terminal falls back to plain ASCII
-            whatever it says, and defaults to blocks when absent.
+        generator: The generator holding the maze.
+        config: The typed config dict, read for ENTRY and EXIT here
+            and for RENDERER by maze_lines.
         solution: Direction letters from the generate_maze call that
             produced the current maze.
         show_path: Whether to draw the solution as '*'.
@@ -114,31 +113,16 @@ def display_maze(
 
     Raises:
         RenderError: If the solution contains a direction letter that
-            is not 'N', 'E', 'S' or 'W'. Raised by render.
+            is not 'N', 'E', 'S' or 'W'. Raised by maze_lines.
     """
-    coloured = use_colour()
-
-    if coloured and config.get("RENDERER", "blocks") == "blocks":
-        lines = block_render.render(
-            generator.grid,
-            config["ENTRY"],
-            config["EXIT"],
-            solution,
-            generator.pattern_cells,
-            show_path,
-            PALETTE[colour_idx],
-        )
-    else:
-        lines = render(
-            generator.grid,
-            config["ENTRY"],
-            config["EXIT"],
-            solution,
-            generator.pattern_cells,
-            show_path,
-        )
-        if coloured:
-            lines = colourise(lines, PALETTE[colour_idx])
+    lines = maze_lines(
+        generator.grid,
+        config,
+        solution,
+        generator.pattern_cells,
+        show_path,
+        colour_idx,
+    )
     for line in lines:
         print(line)
 
@@ -190,6 +174,16 @@ def main() -> None:
             solution = generate_maze(generator, config)
         elif choice == "2":
             show_path = not show_path
+            delay = config.get("ANIMATION_DELAY", DEFAULT_DELAY_MS)
+            if show_path and delay and use_animation():
+                animate_path(
+                    generator.grid,
+                    config,
+                    solution,
+                    generator.pattern_cells,
+                    colour_idx,
+                    delay,
+                )
         elif choice == "3":
             colour_idx = (colour_idx + 1) % len(PALETTE)
         elif choice == "4":
