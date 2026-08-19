@@ -17,8 +17,10 @@ Fragment for the final `README.md`, assembled at CP5 together with A's
 - [Instructions](#instructions)
   - [Menu](#menu)
 - [Example output](#example-output)
-  - [Default board (`PERFECT=false`)](#default-board-perfectfalse)
-  - [Perfect maze (`PERFECT=true`)](#perfect-maze-perfecttrue)
+  - [Default board, colour blocks (`PERFECT=false`)](#default-board-colour-blocks-perfectfalse)
+  - [Perfect maze, path revealed (`PERFECT=true`)](#perfect-maze-path-revealed-perfecttrue)
+  - [ASCII renderer (`RENDERER=ascii`)](#ascii-renderer-rendererascii)
+  - [ASCII with the path revealed](#ascii-with-the-path-revealed)
 - [Configuration file](#configuration-file)
   - [Mandatory keys](#mandatory-keys)
   - [Optional keys](#optional-keys)
@@ -87,14 +89,17 @@ again. Ctrl-D and Ctrl-C both quit cleanly.
 
 ## Example output
 
-Two runs from the same program. The `config.txt` used is shown above each
-picture, so the settings behind the screenshot are visible rather than
+Four runs of the same program. The `config.txt` behind each picture is
+printed above it, so the settings that produced it are visible rather than
 implied.
 
-### Default board (`PERFECT=false`)
+### Default board, colour blocks (`PERFECT=false`)
 
-Fully connected, several independent routes, no dead-ends — the mode a
-Pac-Man-style game would use. This is the default.
+The default mode, and what a terminal shows: fully connected, several
+independent routes and no dead-ends, so the board is directly usable by a
+Pac-Man-style game. The grey cells are the "42" — fully closed, and the
+only cells allowed to be unreachable. Magenta marks the entry, red the
+exit.
 
 ```
 WIDTH=15
@@ -103,17 +108,17 @@ ENTRY=0,0
 EXIT=14,14
 OUTPUT_FILE=maze.txt
 PERFECT=false
-SEED=7
+SEED=42
 ```
 
-<!-- TODO: screenshot. Path is written for the assembled README.md at the
-     repo root, so it shows as broken while previewing this fragment from
-     docs/. Do not "fix" it at CP5. -->
-![Default board, shown with the block renderer](docs/img/maze-pacman.png)
+![Default board rendered as colour blocks](docs/img/default_board_false.png)
 
-### Perfect maze (`PERFECT=true`)
+### Perfect maze, path revealed (`PERFECT=true`)
 
-Exactly one route between any two cells, no loops.
+With `PERFECT=true` there is exactly one route between any two cells and
+no loops at all, so the shortest path is the only path — which is why it
+winds through nearly the whole maze. Revealed with menu key `2`; it starts
+hidden.
 
 ```
 WIDTH=15
@@ -122,19 +127,44 @@ ENTRY=0,0
 EXIT=14,14
 OUTPUT_FILE=maze.txt
 PERFECT=true
-SEED=7
+SEED=42
 ```
 
-<!-- TODO: screenshot, same path caveat as above. -->
-![Perfect maze, shown with the block renderer](docs/img/maze-perfect.png)
+![Perfect maze with the solution path shown](docs/img/default_board_2_true_full.png)
 
-In both pictures `S` marks the entry, `E` the exit, and the fully closed
-cells draw the "42". Press `2` in the menu to reveal the shortest path.
-**A maze smaller than 12x12 cannot fit the "42"** — it is left out and a
-`[PATTERN_ERROR]` notice is printed instead.
+### ASCII renderer (`RENDERER=ascii`)
 
-The screenshots show the block renderer, which is what a terminal gets.
-Redirected or piped output is always plain ASCII with no escape sequences.
+`S` is the entry, `E` the exit, and `#` the cells forming the "42". Walls
+are drawn as `+`, `-` and `|`.
+
+This is also what redirected or piped output looks like, minus the colour:
+when stdout is not a terminal the program falls back to ASCII and emits no
+escape sequences at all, whatever `RENDERER` says.
+
+```
+WIDTH=15
+HEIGHT=15
+ENTRY=0,0
+EXIT=14,14
+OUTPUT_FILE=maze.txt
+PERFECT=false
+SEED=42
+RENDERER=ascii
+```
+
+![Board rendered as ASCII, path hidden](docs/img/ascii_board_false.png)
+
+### ASCII with the path revealed
+
+The same run after pressing `2`. The shortest path from `S` to `E` is
+drawn as `*`, and it is the same path written to the output file — both
+come from a single call to the engine's solver, so they cannot disagree.
+
+![ASCII board with the solution path shown](docs/img/ascii_board_2_false.png)
+
+**A maze smaller than 12x12 cannot fit the "42".** In that case it is left
+out and a `[PATTERN_ERROR]` notice is printed on stderr, as the subject
+allows; the program continues normally.
 
 ## Configuration file
 
