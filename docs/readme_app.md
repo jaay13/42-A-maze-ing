@@ -16,6 +16,9 @@ Fragment for the final `README.md`, assembled at CP5 together with A's
 - [Description](#description)
 - [Instructions](#instructions)
   - [Menu](#menu)
+- [Example output](#example-output)
+  - [Default board (`PERFECT=false`)](#default-board-perfectfalse)
+  - [Perfect maze (`PERFECT=true`)](#perfect-maze-perfecttrue)
 - [Configuration file](#configuration-file)
   - [Mandatory keys](#mandatory-keys)
   - [Optional keys](#optional-keys)
@@ -81,6 +84,57 @@ lints with the same versions rather than whatever is newest.
 
 The path starts hidden. Any other input prints a short hint and asks
 again. Ctrl-D and Ctrl-C both quit cleanly.
+
+## Example output
+
+Two runs from the same program. The `config.txt` used is shown above each
+picture, so the settings behind the screenshot are visible rather than
+implied.
+
+### Default board (`PERFECT=false`)
+
+Fully connected, several independent routes, no dead-ends — the mode a
+Pac-Man-style game would use. This is the default.
+
+```
+WIDTH=15
+HEIGHT=15
+ENTRY=0,0
+EXIT=14,14
+OUTPUT_FILE=maze.txt
+PERFECT=false
+SEED=7
+```
+
+<!-- TODO: screenshot. Path is written for the assembled README.md at the
+     repo root, so it shows as broken while previewing this fragment from
+     docs/. Do not "fix" it at CP5. -->
+![Default board, shown with the block renderer](docs/img/maze-pacman.png)
+
+### Perfect maze (`PERFECT=true`)
+
+Exactly one route between any two cells, no loops.
+
+```
+WIDTH=15
+HEIGHT=15
+ENTRY=0,0
+EXIT=14,14
+OUTPUT_FILE=maze.txt
+PERFECT=true
+SEED=7
+```
+
+<!-- TODO: screenshot, same path caveat as above. -->
+![Perfect maze, shown with the block renderer](docs/img/maze-perfect.png)
+
+In both pictures `S` marks the entry, `E` the exit, and the fully closed
+cells draw the "42". Press `2` in the menu to reveal the shortest path.
+**A maze smaller than 12x12 cannot fit the "42"** — it is left out and a
+`[PATTERN_ERROR]` notice is printed instead.
+
+The screenshots show the block renderer, which is what a terminal gets.
+Redirected or piped output is always plain ASCII with no escape sequences.
 
 ## Configuration file
 
