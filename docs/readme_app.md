@@ -111,7 +111,7 @@ PERFECT=false
 SEED=42
 ```
 
-![Default board rendered as colour blocks](docs/img/default_board_false.png)
+![Default board rendered as colour blocks](img/default_board_false.png)
 
 ### Perfect maze, path revealed (`PERFECT=true`)
 
@@ -130,7 +130,7 @@ PERFECT=true
 SEED=42
 ```
 
-![Perfect maze with the solution path shown](docs/img/default_board_2_true_full.png)
+![Perfect maze with the solution path shown](img/default_board_2_true_full.png)
 
 ### ASCII renderer (`RENDERER=ascii`)
 
@@ -152,7 +152,7 @@ SEED=42
 RENDERER=ascii
 ```
 
-![Board rendered as ASCII, path hidden](docs/img/ascii_board_false.png)
+![Board rendered as ASCII, path hidden](img/ascii_board_false.png)
 
 ### ASCII with the path revealed
 
@@ -160,7 +160,7 @@ The same run after pressing `2`. The shortest path from `S` to `E` is
 drawn as `*`, and it is the same path written to the output file — both
 come from a single call to the engine's solver, so they cannot disagree.
 
-![ASCII board with the solution path shown](docs/img/ascii_board_2_false.png)
+![ASCII board with the solution path shown](img/ascii_board_2_false.png)
 
 **A maze smaller than 12x12 cannot fit the "42".** In that case it is left
 out and a `[PATTERN_ERROR]` notice is printed on stderr, as the subject
@@ -277,6 +277,9 @@ Two deliberate exceptions:
 
 ## Still to settle before CP5
 
+- **Image paths.** They are `img/...`, relative to this file, so they
+  render here and on GitHub. When this fragment is merged into
+  `README.md` at the repo root, prefix them with `docs/`.
 - A's fragment: chosen algorithm, why it was chosen, and the
   reusable-module documentation.
 - Joint sections: team roles, planning and how it evolved, what worked
