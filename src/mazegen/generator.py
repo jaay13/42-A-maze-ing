@@ -129,25 +129,28 @@ class MazeGenerator:
         self._grid[y][x] &= ~wall
         self._grid[ny][nx] &= ~_OPPOSITE[wall]
 
-    def _forbidden_cells(self) -> set[tuple[int, int]]:
-        """Cells the 42 glyph must not cover (entry, exit, corners, centre)."""
+    def _corner_cells(self) -> set[tuple[int, int]]:
+        """The four outer corners."""
         w = self.width
         h = self.height
-        cells: set[tuple[int, int]] = {
-            self.entry,
-            self.exit,
-            (0, 0),
-            (w - 1, 0),
-            (0, h - 1),
-            (w - 1, h - 1),
-        }
-        # Same centre rule as tools/maze_analyzer.py
+        return {(0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1)}
+
+    def _centre_cells(self) -> set[tuple[int, int]]:
+        """Pac-Man start cell(s). Same rule as maze_analyzer.
+
+        Odd size: one middle cell. Even size: the 2x2 around the middle.
+        Only *one* of those must stay a corridor, so the 42 may cover
+        the others and still sit in the visual centre.
+        """
+        w = self.width
+        h = self.height
         rows = {h // 2} if h % 2 else {h // 2 - 1, h // 2}
         cols = {w // 2} if w % 2 else {w // 2 - 1, w // 2}
-        for y in rows:
-            for x in cols:
-                cells.add((x, y))
-        return cells
+        return {(x, y) for y in rows for x in cols}
+
+    def _hard_forbidden(self) -> set[tuple[int, int]]:
+        """Cells the 42 must never cover: entry, exit, corners."""
+        return {self.entry, self.exit} | self._corner_cells()
 
     def _remainder_connected(
         self,
@@ -188,7 +191,8 @@ class MazeGenerator:
         self._has_pattern = False
         if self.width < _PATTERN_W or self.height < _PATTERN_H:
             return
-        forbidden = self._forbidden_cells()
+        hard = self._hard_forbidden()
+        centres = self._centre_cells()
         max_ox = self.width - _PATTERN_W
         max_oy = self.height - _PATTERN_H
         mid_x = (self.width - 1) / 2
@@ -200,9 +204,13 @@ class MazeGenerator:
                 cells = [
                     (ox + dx, oy + dy) for dx, dy in _PATTERN_42
                 ]
-                if any(cell in forbidden for cell in cells):
+                blocked = set(cells)
+                if any(cell in hard for cell in cells):
                     continue
-                if not self._remainder_connected(set(cells)):
+                # Analyzer: at least one centre candidate stays a corridor.
+                if centres and not (centres - blocked):
+                    continue
+                if not self._remainder_connected(blocked):
                     continue
                 glyph_x = ox + (_PATTERN_W - 1) / 2
                 glyph_y = oy + (_PATTERN_H - 1) / 2

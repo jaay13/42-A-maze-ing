@@ -1,5 +1,7 @@
 """Config file loading and validation for a_maze_ing (Person B / app layer)."""
 
+from typing import Any
+
 from .errors import ConfigError
 
 MANDATORY_CONFIG_KEYS = [
@@ -49,7 +51,7 @@ def load_config(path: str) -> dict[str, str]:
     return config
 
 
-def check_mandatory_keys(config: dict) -> None:
+def check_mandatory_keys(config: dict[str, str]) -> None:
     """Validate that every mandatory config key is present.
 
     Args:
@@ -67,7 +69,7 @@ def check_mandatory_keys(config: dict) -> None:
         )
 
 
-def check_unknown_keys(config: dict) -> None:
+def check_unknown_keys(config: dict[str, str]) -> None:
     """Reject any config key the program does not recognise.
 
     Unknown keys are an error rather than a silent pass-through so that
@@ -238,7 +240,7 @@ OPTIONAL_CONVERTERS = {
 }
 
 
-def parse_config(raw: dict) -> dict:
+def parse_config(raw: dict[str, str]) -> dict[str, Any]:
     """Convert known config values to their real types.
 
     WIDTH/HEIGHT become int, ENTRY/EXIT become (int, int) tuples, and
@@ -257,7 +259,7 @@ def parse_config(raw: dict) -> dict:
     Raises:
         ConfigError: If any known value fails its conversion.
     """
-    typed_dict = {}
+    typed_dict: dict[str, Any] = {}
     for k, converter in CONVERTERS.items():
         typed_dict[k] = converter(raw[k], k)
 

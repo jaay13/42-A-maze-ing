@@ -10,6 +10,7 @@ Usage:
 """
 
 import sys
+from typing import Any
 
 from app.animate import DEFAULT_DELAY_MS, animate_path, use_animation
 from app.colour import PALETTE
@@ -41,7 +42,10 @@ def get_config_path() -> str:
     return sys.argv[1]
 
 
-def generate_maze(generator: MazeGenerator, config: dict) -> list[str]:
+def generate_maze(
+    generator: MazeGenerator,
+    config: dict[str, Any],
+) -> list[str]:
     """Generate a maze and write it to the output file.
 
     Paired with display_maze, which draws the result: this half changes
@@ -86,7 +90,7 @@ def generate_maze(generator: MazeGenerator, config: dict) -> list[str]:
 
 def display_maze(
     generator: MazeGenerator,
-    config: dict,
+    config: dict[str, Any],
     solution: list[str],
     show_path: bool,
     colour_idx: int,
