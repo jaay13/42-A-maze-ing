@@ -1,16 +1,9 @@
 """Entry point for A-Maze-ing.
 
 Reads a KEY=VALUE configuration file, generates a maze with the mazegen
-engine, displays it, and offers an interactive menu.
-
-No traceback ever reaches the terminal. Anything that stops the run --
-a bad config, an unreadable file, a maze the engine cannot build -- is
-reported as a single clean message on stderr and exits 1. Two kinds of
-message deliberately do neither: the '42' pattern notice, which reports
-that an otherwise successful run left the glyph out (subject SS IV.4),
-goes to stderr and leaves the exit code at 0; and the menu's reply to
-an unrecognised choice, which is interactive feedback rather than a
-failure, goes to stdout and also leaves it at 0.
+engine, displays it, and offers an interactive menu. No traceback ever
+reaches the terminal: anything that stops the run is one clean message
+on stderr and exit 1.
 
 Usage:
     python3 a_maze_ing.py config.txt
@@ -18,6 +11,8 @@ Usage:
 
 import sys
 
+from app import block_render
+from app.colour import PALETTE, colourise, use_colour
 from app.config import load_config, parse_config
 from app.errors import AppError
 from app.output import write_output
@@ -49,31 +44,12 @@ def get_config_path() -> str:
 def generate_maze(generator: MazeGenerator, config: dict) -> list[str]:
     """Generate a maze and write it to the output file.
 
-    Paired with display_maze, which draws the result. The two are kept
-    apart because this one changes the world -- it re-runs the
-    generator and rewrites OUTPUT_FILE -- while drawing only describes
-    it. The menu depends on that: showing or hiding the path re-renders
-    an unchanged maze, and must neither generate a new one nor touch
-    the file.
-
-    Keeping the write in here is what stops OUTPUT_FILE going stale
-    after a regenerate: the file always describes the current maze.
-    It does not always match the screen, since the path can be hidden
-    from view while remaining in the file, where the subject requires
-    it.
-
-    solve() is called once and its result returned rather than
-    re-derived, since the path in the file and the path shown to the
-    user must come from the same call. The caller holds it for as long
-    as the maze stays on screen.
-
-    Subject SS IV.4 allows the '42' pattern to be omitted when the maze
-    is too small and asks for an error message in that case. It is only
-    a message: the maze is still generated, solved, written and drawn,
-    so nothing is skipped and the exit code stays 0. It goes to stderr
-    because the run succeeded and stdout holds the maze itself. It is
-    reported here rather than in display_maze so it is printed once per
-    maze, not once per redraw.
+    Paired with display_maze, which draws the result: this half changes
+    the world, that half only describes it, and the menu needs them
+    apart so showing or hiding the path can redraw an unchanged maze
+    without regenerating it or rewriting OUTPUT_FILE. The file always
+    describes the current maze, which is not the same as matching the
+    screen.
 
     Args:
         generator: The generator to (re)run. Modified in place.
@@ -82,8 +58,7 @@ def generate_maze(generator: MazeGenerator, config: dict) -> list[str]:
 
     Returns:
         The solution as direction letters, from the single solve()
-        call. Pass it to display_maze to draw the same path that was
-        written to the file.
+        call, so the file and the screen show the same path.
 
     Raises:
         MazegenError: If the maze cannot be generated or solved.
@@ -114,45 +89,52 @@ def display_maze(
     config: dict,
     solution: list[str],
     show_path: bool,
+    colour_idx: int,
 ) -> None:
     """Draw the current maze to stdout.
 
-    Paired with generate_maze, which produces the maze this draws.
-    Drawing only describes the world: it reads the generator and
-    prints, and changes nothing. That is what lets the menu redraw the
-    same maze with a different view -- showing or hiding the path, and
-    later rotating wall colours -- without regenerating it or
-    rewriting OUTPUT_FILE.
-
-    Takes the solution as an argument rather than calling solve()
-    again, so every redraw of one maze shows the path that was written
-    to the file.
+    Reads the generator and prints; changes nothing. That is what lets
+    the menu redraw the same maze with a different view.
 
     Args:
-        generator: The generator holding the maze to draw. Read only,
-            for grid and pattern_cells.
-        config: The typed config dict, read for ENTRY and EXIT. These
-            come from the config rather than the generator because
-            entry/exit attributes are not part of the frozen interface.
+        generator: The generator holding the maze, read for grid and
+            pattern_cells.
+        config: The typed config dict, read for ENTRY, EXIT and
+            RENDERER. RENDERER is a preference only: a run whose
+            stdout is not a terminal falls back to plain ASCII
+            whatever it says, and defaults to blocks when absent.
         solution: Direction letters from the generate_maze call that
-            produced the maze currently held by the generator.
-        show_path: Whether to draw the solution as '*'. Passed straight
-            to render. The caller owns this state, so the same maze can
-            be drawn either way without being regenerated, and the
-            written file keeps the path regardless of what is shown.
+            produced the current maze.
+        show_path: Whether to draw the solution as '*'.
+        colour_idx: Index into app.colour.PALETTE for the wall colour.
 
     Raises:
         RenderError: If the solution contains a direction letter that
             is not 'N', 'E', 'S' or 'W'. Raised by render.
     """
-    lines = render(
-        generator.grid,
-        config["ENTRY"],
-        config["EXIT"],
-        solution,
-        generator.pattern_cells,
-        show_path,
-    )
+    coloured = use_colour()
+
+    if coloured and config.get("RENDERER", "blocks") == "blocks":
+        lines = block_render.render(
+            generator.grid,
+            config["ENTRY"],
+            config["EXIT"],
+            solution,
+            generator.pattern_cells,
+            show_path,
+            PALETTE[colour_idx],
+        )
+    else:
+        lines = render(
+            generator.grid,
+            config["ENTRY"],
+            config["EXIT"],
+            solution,
+            generator.pattern_cells,
+            show_path,
+        )
+        if coloured:
+            lines = colourise(lines, PALETTE[colour_idx])
     for line in lines:
         print(line)
 
@@ -162,29 +144,13 @@ def display_maze(
 def main() -> None:
     """Load and validate the config, build a maze, and drive the CLI loop.
 
-    Reads the config file named on the command line, builds a
-    MazeGenerator from the validated, typed config, then calls
-    generate_maze to produce and write the maze and display_maze to
-    draw it. Then loops on the four-option menu from subject SS V:
-    re-generate, show/hide the shortest path, rotate the wall colours,
-    and quit. Colour rotation is a placeholder until B6 lands; the
-    entry exists so the menu matches the subject and so B6 changes only
-    what the option does, not the loop around it. Re-generating runs
-    both halves again, so the output file
-    never goes stale; showing or hiding the path runs only display_maze,
-    so it redraws the same maze without touching the file. Exits 1 via
-    get_config_path if the program was invoked with anything other than
-    exactly one argument.
-
-    An unrecognised choice reprints the menu rather than raising: a
-    mistyped menu entry is not an error, so nothing goes to stderr and
-    the exit code stays 0. split.md:145 requires the menu to survive
-    garbage and empty input; EOF and interrupts are handled by the
-    __main__ block, which exits 0 for both.
-
-    Holds the solution returned by generate_maze in a local for as long
-    as that maze is on screen, so a redraw can show the same path
-    without a second solve() call.
+    Loops on the four-option menu from subject SS V: re-generate,
+    show/hide the shortest path, rotate the wall colours, and quit.
+    Holds the solution, the show/hide flag and the palette index as
+    locals, so a redraw needs no second solve() call and the colour
+    module never decides which colour comes next. An unrecognised
+    choice reprints the menu without raising; EOF and interrupts are
+    handled by the __main__ block, which exits 0 for both.
 
     Raises:
         ConfigError: If the config file is missing, malformed, or
@@ -196,6 +162,7 @@ def main() -> None:
     config_path = get_config_path()
     config = parse_config(load_config(config_path))
     show_path = False
+    colour_idx = 0
     generator = MazeGenerator(
         width=config["WIDTH"],
         height=config["HEIGHT"],
@@ -205,7 +172,7 @@ def main() -> None:
         seed=config.get("SEED"),
     )
     solution = generate_maze(generator, config)
-    display_maze(generator, config, solution, show_path)
+    display_maze(generator, config, solution, show_path, colour_idx)
 
     while True:
         print("=== A-Maze-ing ===")
@@ -220,13 +187,13 @@ def main() -> None:
         elif choice == "2":
             show_path = not show_path
         elif choice == "3":
-            print("\nColours coming in B6\n")
+            colour_idx = (colour_idx + 1) % len(PALETTE)
         elif choice == "4":
             break
         else:
             print(f"\nExpected input 1-4, got '{choice}' try again\n")
             continue
-        display_maze(generator, config, solution, show_path)
+        display_maze(generator, config, solution, show_path, colour_idx)
 
 
 if __name__ == "__main__":
