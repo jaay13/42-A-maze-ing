@@ -296,18 +296,41 @@ shortest. That check is done separately by the rehearsal harness in
 ### The rehearsal harness
 
 The gap above — that the analyzer discards the path line — is covered by a
-separate script, `not_for_submission/b8_rehearsal.py`. It replays the
-evaluation scale before an evaluator does: it sabotages the config seven
-ways and checks each run dies cleanly, then checks each `PERFECT` mode's
-output file on several seeds.
+separate script, `not_for_submission/b8_rehearsal.py`:
+
+```
+python3 not_for_submission/b8_rehearsal.py
+```
+
+It replays the evaluation scale before an evaluator does, in two groups.
+The first sabotages `config.txt` seven ways and checks that every run dies
+cleanly: exit code 1, one message, no traceback, and no output file left
+behind. The second generates both `PERFECT` modes on three seeds each and
+checks the resulting output file — that its path can actually be walked
+without crossing a wall, that it ends on the exit, that it is genuinely the
+shortest route, and that it matches the `*` drawn on screen — then runs
+`maze_analyzer.py` over it.
+
+Every check is `PASS`, `WARN` or `FAIL`. **FAIL** means the evaluation scale
+would mark that question failed. **WARN** means the scale still passes and
+only our own convention is unmet, such as an error message not naming the
+key at fault. The script exits 1 if anything failed, so it can gate a push.
 
 It is **not part of the submission**. It is written by Claude (see
 [How AI was used](#how-ai-was-used)), lives outside the shipped code, and
 nothing that ships imports it.
 
-Abridged output of a full run:
+<details>
+<summary>Full output of a default run</summary>
 
 ```
+A-Maze-ing defence rehearsal
+repo /Users/jayjoe/Documents/42Berlin/projects/all_amazeing
+
+SCALE: Configuration file > Error Management
+  "Edit the configuration file to ensure that the program
+   correctly handles its errors."
+
   case                     exit  lines  traceback  outfile  message
   mandatory key removed      1      1         no   absent  ok  ("WIDTH")
   line without '='           1      1         no   absent  ok  ("WIDTHIS15")
@@ -320,6 +343,39 @@ Abridged output of a full run:
 
   PASS  8 pass  0 warn  0 fail
 
+SCALE: Output file > Format
+  "Control that the shortest path sequence in the output
+   file matches the visual representation."
+  "Generate one maze with each value of PERFECT and run the
+   analysis script on each output file."
+
+  PERFECT=true    15x15  seed 42
+    entry/exit in file match the config ..................... ok
+    path walkable (crosses no closed wall) .................. ok  132 steps
+    path ends on EXIT, no cell revisited .................... ok
+    length == independent BFS ............................... ok  132 == 132
+    '*' on screen == cells path visits ...................... ok  131 cells
+    maze_analyzer verdict is PERFECT maze ................... ok
+    maze_analyzer wall coherence ............................ ok  OK (all shared walls match)
+
+  PERFECT=true    15x15  seed 7
+    entry/exit in file match the config ..................... ok
+    path walkable (crosses no closed wall) .................. ok  90 steps
+    path ends on EXIT, no cell revisited .................... ok
+    length == independent BFS ............................... ok  90 == 90
+    '*' on screen == cells path visits ...................... ok  89 cells
+    maze_analyzer verdict is PERFECT maze ................... ok
+    maze_analyzer wall coherence ............................ ok  OK (all shared walls match)
+
+  PERFECT=true    15x15  seed 1234
+    entry/exit in file match the config ..................... ok
+    path walkable (crosses no closed wall) .................. ok  64 steps
+    path ends on EXIT, no cell revisited .................... ok
+    length == independent BFS ............................... ok  64 == 64
+    '*' on screen == cells path visits ...................... ok  63 cells
+    maze_analyzer verdict is PERFECT maze ................... ok
+    maze_analyzer wall coherence ............................ ok  OK (all shared walls match)
+
   PERFECT=false   15x15  seed 42
     entry/exit in file match the config ..................... ok
     path walkable (crosses no closed wall) .................. ok  30 steps
@@ -330,16 +386,40 @@ Abridged output of a full run:
     maze_analyzer wall coherence ............................ ok  OK (all shared walls match)
     (bonus, not graded here: --max-dead-ends 0 -> yes)
 
+  PERFECT=false   15x15  seed 7
+    entry/exit in file match the config ..................... ok
+    path walkable (crosses no closed wall) .................. ok  36 steps
+    path ends on EXIT, no cell revisited .................... ok
+    length == independent BFS ............................... ok  36 == 36
+    '*' on screen == cells path visits ...................... ok  35 cells
+    maze_analyzer verdict is Pac-Man-USABLE ................. ok
+    maze_analyzer wall coherence ............................ ok  OK (all shared walls match)
+    (bonus, not graded here: --max-dead-ends 0 -> yes)
+
+  PERFECT=false   15x15  seed 1234
+    entry/exit in file match the config ..................... ok
+    path walkable (crosses no closed wall) .................. ok  46 steps
+    path ends on EXIT, no cell revisited .................... ok
+    length == independent BFS ............................... ok  46 == 46
+    '*' on screen == cells path visits ...................... ok  45 cells
+    maze_analyzer verdict is Pac-Man-USABLE ................. ok
+    maze_analyzer wall coherence ............................ ok  OK (all shared walls match)
+    (bonus, not graded here: --max-dead-ends 0 -> yes)
+
+  PASS  42 pass  0 warn  0 fail
+
 ======================================================================
 RESULT: PASS  50 pass  0 warn  0 fail
 ======================================================================
 ```
 
-The check the analyzer cannot make is `length == independent BFS`: the
-harness runs its own breadth-first search over the grid it read back from
-the file and compares. It deliberately does not reuse the application's
-own path code — a checker that shares code with the thing it checks
-shares its bugs.
+</details>
+
+The check nothing else makes is `length == independent BFS`: the harness
+runs its own breadth-first search over the grid it reads back from the
+file and compares the two lengths. It deliberately does not reuse the
+application's own path code — a checker that shares code with the thing it
+checks shares its bugs.
 
 ## Error handling
 
