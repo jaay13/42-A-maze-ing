@@ -9,11 +9,9 @@ AppError subclasses, and a_maze_ing.py catches one of each.
 class AppError(Exception):
     """Base class for every error the application layer raises.
 
-    Exists so a_maze_ing.py can catch a single type at the top level.
-    Without it each new kind of app error would need its own except
-    clause, and the handler block would grow with every backlog item.
-    Subclasses carry their own '[CATEGORY]' prefix in the message,
-    since one handler cannot know which kind it caught.
+    Lets a_maze_ing.py catch a single type at the top level. Subclasses
+    carry their own '[CATEGORY]' prefix in the message, since one handler
+    cannot know which kind it caught.
     """
 
 
@@ -21,9 +19,8 @@ class ConfigError(AppError):
     """Raised when config.txt is missing, malformed, or invalid.
 
     Args:
-        message: Description of what is wrong with the
-            config file, including enough detail (line number, key
-            name, or path) for the user to fix it.
+        message: What is wrong, with enough detail (line number, key name
+            or path) for the user to fix it.
     """
 
 
@@ -34,25 +31,18 @@ class OutputError(AppError):
     failure is in writing OUTPUT_FILE, not in the user's settings.
 
     Args:
-        message: Description of what went wrong, including the output
-            path, so the user can fix it.
+        message: What went wrong, including the output path.
     """
 
 
 class RenderError(AppError):
     """Raised when the maze cannot be drawn for the terminal.
 
-    Separate from MazegenError because the app detects these, not the
-    engine: the engine returned successfully, but the data it handed
-    over does not match INTERFACE.md and so cannot be rendered. The
-    message names the engine as the cause even though the app is the
-    one reporting it.
-
-    No user input can trigger this, only a contract violation, so it
-    guards the cases where bad engine data would otherwise escape as a
-    traceback rather than every promise the interface makes.
+    Separate from MazegenError because the app detects these: the engine
+    returned successfully, but the data it handed over does not match
+    INTERFACE.md. No user input can trigger this, only a contract
+    violation.
 
     Args:
-        message: Description of what could not be drawn, including the
-            offending value, so the engine bug can be traced.
+        message: What could not be drawn, including the offending value.
     """

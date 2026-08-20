@@ -79,15 +79,14 @@ def use_colour() -> bool:
     """Report whether ANSI escape sequences may be written to stdout.
 
     All three conditions must hold, so colour is opt-out on three
-    independent grounds. NO_COLOR is tested for presence rather than
-    value, per the no-color.org convention: an empty value still means
-    no colour.
+    independent grounds. NO_COLOR is tested for presence rather than value,
+    per the no-color.org convention: an empty value still means no colour.
+
+    Callers use this to choose a renderer, not only whether to add colour,
+    since block output is meaningless without a terminal.
 
     Returns:
-        True if stdout is a terminal that has not asked to be left
-        alone. Callers use this to choose a renderer, not only whether
-        to add colour, since block output is meaningless without a
-        terminal.
+        True if stdout is a terminal that has not asked to be left alone.
     """
     return (
         sys.stdout.isatty()

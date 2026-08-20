@@ -29,11 +29,6 @@ def is_closed(value: int, side: str) -> bool:
 
     Returns:
         True if that wall is closed, False if it is open.
-
-    Raises:
-        KeyError: If side is not one of 'N', 'E', 'S', 'W'. This is a
-            programming error rather than user input, so it is left to
-            surface rather than being converted to an AppError.
     """
     return bool(value & WALL_BITS[side])
 
@@ -44,20 +39,11 @@ def path_cells(
 ) -> set[tuple[int, int]]:
     """Replay a solution path into the set of cells it visits.
 
-    MazeGenerator.solve() returns directions rather than positions,
-    which the output file can write as-is but the renderer cannot use:
-    drawing asks 'is this cell on the path?' once per cell, and that
-    question needs coordinates. Walking the letters once here turns
-    the answer into a set lookup instead of a re-walk per cell.
-
-    Never solves anything itself. The walk only follows the letters it
-    is given and never looks at a wall, so a wrong path is reproduced
-    faithfully rather than corrected.
+    Follows the letters it is given and never looks at a wall, so a wrong
+    path is reproduced faithfully rather than corrected.
 
     Args:
-        entry: The (x, y) cell the path starts from, included in the
-            result: the set is every cell the walk visits, and the
-            walk starts before it has moved.
+        entry: The (x, y) cell the path starts from.
         solution: The path as single-letter directions ('N', 'E', 'S',
             'W'), as returned by MazeGenerator.solve().
 
@@ -67,9 +53,6 @@ def path_cells(
 
     Raises:
         RenderError: If a letter is not one of 'N', 'E', 'S', 'W'.
-            Unlike is_closed's KeyError this is bad engine data rather
-            than a mistake in app code, and it would otherwise reach
-            the terminal as a traceback.
     """
     ret = {entry}
     x, y = entry
@@ -90,37 +73,19 @@ def draw_walls(grid: list[list[int]]) -> list[list[str]]:
     """Draw the maze's walls onto a fresh character canvas.
 
     The canvas is 2*height+1 rows by 4*width+1 columns, because n cells
-    have n interiors but n+1 lines between and around them. Cell (x, y)
-    is the box spanning rows 2*y to 2*y+2 and columns 4*x to 4*x+4, so
-    rows are always derived from y and columns always from x: a row
-    index built from x, or a column index from y, is a bug.
-
-    Every interior wall is shared by two cells, which the engine keeps
-    in agreement (see MazeGenerator._open_wall). Each wall is therefore
-    drawn by exactly one owner: a cell draws its own north and west
-    walls, and the two outer edges that no cell owns are drawn last.
-    That is why the E and S bits are only read along the border even
-    though is_closed supports all four sides. Reading all four instead
-    would draw every interior wall twice and let a future engine bug
-    show up as one cell contradicting its neighbour.
-
-    Returns a mutable list of lists rather than finished strings so
-    place_symbols can write single characters at known positions;
-    strings would have to be rebuilt piecewise since they cannot be
-    assigned into.
+    have n interiors but n+1 lines between and around them. Cell (x, y) is
+    the box spanning rows 2*y to 2*y+2 and columns 4*x to 4*x+4, so rows
+    are always derived from y and columns always from x.
 
     Args:
-        grid: The maze as returned by MazeGenerator.grid, where
-            grid[y][x] holds one cell's wall bits. Must have at least
-            one row and one column. Rejecting degenerate sizes is the
-            engine's job (split.md A8, raising InvalidDimensionError),
-            so no guard is repeated here; until that lands, a zero or
-            negative WIDTH reaches this function and its IndexError is
-            caught by the safety net in a_maze_ing.py.
+        grid: The maze as returned by MazeGenerator.grid, where grid[y][x]
+            holds one cell's wall bits. Must have at least one row and one
+            column.
 
     Returns:
         The canvas as rows of single characters, walls drawn and every
-        cell interior still blank.
+        cell interior still blank. Mutable so that place_symbols can write
+        into it.
     """
     height = len(grid)
     width = len(grid[0])
@@ -131,6 +96,11 @@ def draw_walls(grid: list[list[int]]) -> list[list[str]]:
         for col in range(0, 4 * width + 1, 4):
             canvas[row][col] = "+"
 
+    # Every interior wall is shared by two cells, which the engine keeps
+    # in agreement (see MazeGenerator._open_wall), so each wall is drawn
+    # by exactly one owner: a cell draws its own north and west walls,
+    # and the two outer edges that no cell owns are drawn last. Reading
+    # all four sides everywhere would draw each interior wall twice.
     for y in range(height):
         for x in range(width):
             if is_closed(grid[y][x], "N"):
@@ -162,30 +132,21 @@ def place_symbols(
 ) -> None:
     """Write the cell symbols onto a canvas that already has walls.
 
-    Cell (x, y)'s interior is the middle of the three columns between
-    its corners, at row 2*y+1 and column 4*x+2, matching the layout
-    draw_walls builds.
-
-    The four writes run in reverse order of precedence and simply
-    overwrite each other, so the required order 'S'/'E' > '*' > '#' >
-    blank is expressed by the order of the statements below rather
-    than by any test. Reordering them silently changes which symbol
-    wins, so they are not independent. The exit is written last
-    because a solved path always ends on it, and the exit marker has
-    to survive that.
-
-    Mutates the canvas rather than returning a new one, since it only
-    ever changes single characters at known positions.
+    Cell (x, y)'s interior is the middle of the three columns between its
+    corners, at row 2*y+1 and column 4*x+2, matching the layout draw_walls
+    builds. Symbol precedence is 'S'/'E' > '*' > '#' > blank.
 
     Args:
         canvas: The canvas from draw_walls, modified in place.
         entry: The (x, y) entry cell, drawn as 'S'.
-        exit_coords: The (x, y) exit cell, drawn as 'E'. Named to
-            avoid shadowing the exit builtin, as in app.output.
+        exit_coords: The (x, y) exit cell, drawn as 'E'.
         path: Cells on the solution, from path_cells, drawn as '*'.
         pattern: The '42' glyph cells from MazeGenerator.pattern_cells,
             drawn as '#'. Empty when the maze is too small for it.
     """
+    # Written in reverse order of precedence: each write simply
+    # overwrites the last, so reordering these changes which symbol
+    # wins. The exit goes last because a solved path ends on it.
     for x, y in pattern:
         canvas[2 * y + 1][4 * x + 2] = "#"
 
@@ -209,18 +170,14 @@ def render(
 ) -> list[str]:
     """Render one maze as the lines to print.
 
-    Composes the two drawing steps: draw_walls builds the canvas from
-    the wall bits, place_symbols writes the cell markers onto it, and
-    the rows are joined into strings only at the end.
+    Composes the two drawing steps: draw_walls builds the canvas from the
+    wall bits, place_symbols writes the cell markers onto it, and the rows
+    are joined into strings only at the end.
 
-    Takes the solution as raw direction letters and calls path_cells
-    itself, rather than accepting a ready-made set. The caller then has
-    no reason to touch solve() twice, which subject SS IV.5 and
-    split.md require: the path written to the output file and the path
-    drawn on screen must come from the same call.
-
-    Returns the lines instead of printing them so the output can be
-    compared without a terminal, which the B8 rehearsal harness needs.
+    Takes the solution as raw direction letters and walks them itself, so
+    that the path written to the output file and the path drawn on screen
+    come from the same MazeGenerator.solve() call, as subject SS IV.5
+    requires.
 
     Args:
         grid: The maze, as MazeGenerator.grid.
@@ -232,19 +189,16 @@ def render(
             call.
         pattern: MazeGenerator.pattern_cells; empty if the maze is too
             small for the glyph.
-        show_path: Whether to draw the solution. When False the
-            maze is still rendered completely: walls, entry, exit and
-            the '42' glyph are unaffected -- only the path layer is
-            left off. The solution is still walked and validated
-            either way, so a bad direction letter raises whether the
-            path is on screen or not.
+        show_path: Whether to draw the '*' path layer. Walls, entry, exit
+            and the glyph are drawn either way, and the solution is walked
+            and validated either way.
 
     Returns:
         One string per canvas row, ready to print in order.
 
     Raises:
-        RenderError: If the solution contains a letter that is not
-            'N', 'E', 'S' or 'W'. Raised by path_cells.
+        RenderError: If the solution contains a letter that is not 'N',
+            'E', 'S' or 'W'. Raised by path_cells.
     """
     canvas = draw_walls(grid)
     solution_path = path_cells(entry, solution)

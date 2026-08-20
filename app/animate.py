@@ -13,10 +13,8 @@ DEFAULT_DELAY_MS = 30
 def use_animation() -> bool:
     """Report whether frames may be drawn one after another.
 
-    Deliberately not use_colour: NO_COLOR is a statement about colour,
-    not about motion, so it is not tested here. Animation is a
-    terminal capability, so a run whose stdout is redirected or piped
-    draws nothing at all.
+    Deliberately not use_colour: NO_COLOR is a statement about colour, not
+    about motion, so it is not tested here.
 
     Returns:
         True if stdout is a terminal that can show frames.
@@ -34,21 +32,10 @@ def animate_path(
 ) -> None:
     """Draw the solution one cell at a time.
 
-    Redraws the whole maze per frame, from the same maze_lines the
-    static view uses, so the two cannot disagree about which renderer
-    ran. Each frame passes a longer slice of the path: path_cells
-    walks only the letters it is given, so a slice is a valid partial
-    path and no renderer code changes.
-
-    Frames overwrite each other in place: each one moves the cursor
-    back up over the previous frame rather than clearing the screen.
-    Clearing homes to the top of the *visible* window, which tears
-    when the maze is taller than the terminal -- a 15x15 needs 40
-    rows and most windows are 24.
-
-    Stops one cell short and rewinds on the way out, so the caller's
-    ordinary redraw paints the finished path and its footer over the
-    last frame. Drawing the last cell here too would print it twice.
+    Redraws the whole maze per frame from the same maze_lines the static
+    view uses, so the two cannot disagree about which renderer ran. Each
+    frame passes a longer slice of the path, which path_cells accepts as a
+    valid partial path.
 
     Args:
         grid: The maze, as MazeGenerator.grid.
@@ -58,6 +45,11 @@ def animate_path(
         colour_idx: Index into app.colour.PALETTE for the wall colour.
         delay_ms: Milliseconds to pause between frames.
     """
+    # Frames overwrite each other in place: each one moves the cursor
+    # back up over the previous frame rather than clearing the screen.
+    # Clearing homes to the top of the *visible* window, which tears
+    # when the maze is taller than the terminal -- a 15x15 needs 40
+    # rows and most windows are 24.
     lines: list[str] = []
     for k in range(len(solution)):
         if lines:
@@ -68,5 +60,8 @@ def animate_path(
         for line in lines:
             print(line)
         time.sleep(delay_ms / 1000)
+    # Stop one cell short and rewind, so the caller's ordinary redraw
+    # paints the finished path and its footer over the last frame.
+    # Drawing the last cell here too would print it twice.
     if lines:
         print(f"\033[{len(lines)}A", end="")
