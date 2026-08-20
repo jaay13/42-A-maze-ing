@@ -76,7 +76,9 @@ Other targets:
 | `make install` | `pip install -e .` plus `requirements-dev.txt` |
 | `make run` | runs against `config.txt` |
 | `make debug` | the same, under `pdb` |
-| `make clean` | removes `__pycache__`, `build`, `dist`, `.mypy_cache` |
+| `make clean` | removes `__pycache__`, `build`, `dist`, the tool caches and the egg-info |
+| `make fclean` | `clean` plus the generated maze named by `OUTPUT_FILE` |
+| `make re` | `fclean`, then `install` |
 | `make lint` | `flake8 .` and `mypy .` with the subject's flags |
 | `make lint-strict` | `flake8 .` and `mypy . --strict` |
 
@@ -620,7 +622,8 @@ python3 a_maze_ing.py config.txt
 ```
 
 `make clean` deletes `dist/`. It does not delete the wheel in the
-repo root. That root copy is the one git tracks.
+repo root. That root copy is the one git tracks. `make fclean` also
+removes the generated maze; neither touches the wheel.
 
 During day-to-day work, `make install` (`pip install -e .`) is fine.
 
@@ -755,4 +758,4 @@ cell is enough, and then it sits in the middle.
 
 **Tools.** GitHub PRs, `flake8`, `mypy` (including `--strict`),
 `maze_analyzer.py`, a Makefile with `install` / `run` / `debug` /
-`clean` / `lint` / `lint-strict`.
+`clean` / `fclean` / `re` / `lint` / `lint-strict`.
