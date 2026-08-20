@@ -37,7 +37,7 @@ clean:
 # clean plus the generated maze, which is program output rather than a
 # build artifact.
 fclean: clean
-	rm -f $(OUTPUT_FILE)
+	rm -f "$(OUTPUT_FILE)"
 
 re: fclean install
 
