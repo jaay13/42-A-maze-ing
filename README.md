@@ -611,6 +611,9 @@ python3 -m venv /tmp/mazegen-run
 source /tmp/mazegen-run/bin/activate
 unset PYTHONPATH
 pip install dist/mazegen-1.0.0-py3-none-any.whl
+pip list
+# mazegen must appear with no path after it. A path means an
+# editable install, so the wheel was never tested.
 python3 -c "import mazegen; print(mazegen.__file__)"
 # that path must be .../site-packages/mazegen/..., not this repo's src/
 python3 a_maze_ing.py config.txt
