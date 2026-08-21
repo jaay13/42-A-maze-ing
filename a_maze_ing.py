@@ -207,10 +207,12 @@ if __name__ == "__main__":
         print()
         sys.exit(0)
     # Last resort (split.md:203). Subject SS IV.2 makes one traceback
-    # fatal, and the engine's parameter validation (A8) is not written
-    # yet, so bad WIDTH/HEIGHT/ENTRY/EXIT still reach the renderer as
-    # IndexError. This is a backstop, not error handling: anything it
-    # catches is a bug that deserves its own handler above.
+    # fatal, so nothing may reach the terminal unhandled. Every error
+    # we know how to describe is caught above: bad WIDTH/HEIGHT/ENTRY/
+    # EXIT raise MazegenError from the engine's own validation, and the
+    # config and output failures raise AppError. This is a backstop,
+    # not error handling: anything it catches is a bug that deserves
+    # its own handler above.
     except Exception as e:
         print(
             f"[INTERNAL_ERROR] unexpected {type(e).__name__}: {e}",
