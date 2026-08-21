@@ -1,6 +1,6 @@
-# Virtual environments
-.venv/
-venv/
+# Virtual environments (any suffix: .venv-build, .venv-test, ...)
+.venv*/
+venv*/
 
 # Byte-compiled files and tool caches
 __pycache__/

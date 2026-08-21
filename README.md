@@ -76,7 +76,9 @@ Other targets:
 | `make install` | `pip install -e .` plus `requirements-dev.txt` |
 | `make run` | runs against `config.txt` |
 | `make debug` | the same, under `pdb` |
-| `make clean` | removes `__pycache__`, `build`, `dist`, `.mypy_cache` |
+| `make clean` | removes `__pycache__`, `build`, `dist`, the tool caches and the egg-info |
+| `make fclean` | `clean` plus the generated maze named by `OUTPUT_FILE` |
+| `make re` | `fclean`, then `install` |
 | `make lint` | `flake8 .` and `mypy .` with the subject's flags |
 | `make lint-strict` | `flake8 .` and `mypy . --strict` |
 
@@ -604,21 +606,24 @@ python3 -m venv /tmp/mazegen-build
 source /tmp/mazegen-build/bin/activate
 pip install build
 python3 -m build
-cp dist/mazegen-1.0.0-py3-none-any.whl .
 deactivate
 
 # virtualenv 2: install only the wheel, then run the app
 python3 -m venv /tmp/mazegen-run
 source /tmp/mazegen-run/bin/activate
 unset PYTHONPATH
-pip install ./mazegen-1.0.0-py3-none-any.whl
+pip install dist/mazegen-1.0.0-py3-none-any.whl
+pip list
+# mazegen must appear with no path after it. A path means an
+# editable install, so the wheel was never tested.
 python3 -c "import mazegen; print(mazegen.__file__)"
 # that path must be .../site-packages/mazegen/..., not this repo's src/
 python3 a_maze_ing.py config.txt
 ```
 
 `make clean` deletes `dist/`. It does not delete the wheel in the
-repo root. That root copy is the one git tracks.
+repo root. That root copy is the one git tracks. `make fclean` also
+removes the generated maze; neither touches the wheel.
 
 During day-to-day work, `make install` (`pip install -e .`) is fine.
 
@@ -753,4 +758,4 @@ cell is enough, and then it sits in the middle.
 
 **Tools.** GitHub PRs, `flake8`, `mypy` (including `--strict`),
 `maze_analyzer.py`, a Makefile with `install` / `run` / `debug` /
-`clean` / `lint` / `lint-strict`.
+`clean` / `fclean` / `re` / `lint` / `lint-strict`.
