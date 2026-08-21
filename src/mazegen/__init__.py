@@ -1,3 +1,9 @@
+"""Public mazegen package surface.
+
+Re-exports ``MazeGenerator`` and the typed ``MazegenError`` hierarchy
+used by the application layer.
+"""
+
 from .errors import (
     ImpossibleMazeError,
     InvalidCoordinateError,

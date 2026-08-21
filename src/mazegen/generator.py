@@ -1,3 +1,10 @@
+"""Maze generation engine for the A-Maze-ing project.
+
+Builds perfect or Pac-Man-style mazes, stamps an optional ``42``
+pattern, and finds the shortest path with BFS. Public surface matches
+``INTERFACE.md``.
+"""
+
 import random
 from collections import deque
 
@@ -55,7 +62,18 @@ _PATTERN_42: tuple[tuple[int, int], ...] = (
 
 
 class MazeGenerator:
-    """Reusable maze engine. Public surface is frozen in INTERFACE.md."""
+    """Reusable maze engine.
+
+    Attributes:
+        width: Maze width in cells.
+        height: Maze height in cells.
+        entry: Entry cell as ``(x, y)``.
+        exit: Exit cell as ``(x, y)``.
+        perfect: If True, keep a perfect maze; if False, braid into a
+            Pac-Man board.
+        seed: Optional RNG seed for reproducible mazes.
+        algorithm: Generation algorithm name (currently ``backtracker``).
+    """
 
     def __init__(
         self,
@@ -67,6 +85,24 @@ class MazeGenerator:
         seed: int | None = None,
         algorithm: str = "backtracker",
     ) -> None:
+        """Create a generator and validate size and coordinates.
+
+        Args:
+            width: Maze width in cells (at least 2).
+            height: Maze height in cells (at least 2).
+            entry: Entry cell ``(x, y)`` with ``(0, 0)`` at top-left.
+            exit: Exit cell ``(x, y)``, must differ from ``entry``.
+            perfect: If True, leave a perfect maze after carving. If
+                False (default), braid dead-ends and open corners plus
+                centre.
+            seed: Optional int. Same seed rebuilds the same maze.
+            algorithm: Reserved name; only ``backtracker`` is used.
+
+        Raises:
+            InvalidDimensionError: Width or height is below 2.
+            InvalidCoordinateError: Entry equals exit, or a coordinate
+                lies outside the grid.
+        """
         self.width = width
         self.height = height
         self.entry = entry
@@ -85,8 +121,14 @@ class MazeGenerator:
 
         Subject IV.4: entry and exit exist, differ, and lie inside the
         grid. A 1xN strip or a negative size is not a maze, so those
-        fail here too, before generate() indexes the grid. Python would
-        otherwise treat ENTRY=-1,0 as the last cell of the row.
+        fail here too, before ``generate()`` indexes the grid. Python
+        would otherwise treat ``ENTRY=-1,0`` as the last cell of the
+        row.
+
+        Raises:
+            InvalidDimensionError: Width or height is below 2.
+            InvalidCoordinateError: Entry equals exit, or a coordinate
+                is out of bounds.
         """
         if self.width < 2 or self.height < 2:
             raise InvalidDimensionError(
@@ -106,11 +148,22 @@ class MazeGenerator:
                 )
 
     def _in_bounds(self, x: int, y: int) -> bool:
-        """True if (x, y) is a cell inside the maze."""
+        """Return whether ``(x, y)`` is a cell inside the maze.
+
+        Args:
+            x: Column index.
+            y: Row index.
+
+        Returns:
+            True if the cell lies inside the grid.
+        """
         return 0 <= x < self.width and 0 <= y < self.height
 
     def _init_grid(self) -> None:
-        """Start every cell fully closed. Passages are opened later."""
+        """Fill the grid with fully closed cells.
+
+        Passages are opened later by ``_open_wall``.
+        """
         self._grid = [
             [ALL_WALLS] * self.width for _ in range(self.height)
         ]
@@ -120,6 +173,12 @@ class MazeGenerator:
 
         Subject IV.4: shared walls must agree. If there is no neighbour
         (outer border), leave the wall closed.
+
+        Args:
+            x: Column of the cell whose wall is opened.
+            y: Row of the cell whose wall is opened.
+            wall: Wall bit (``NORTH``, ``EAST``, ``SOUTH``, or
+                ``WEST``).
         """
         dx, dy = _DELTA[wall]
         nx = x + dx
@@ -130,17 +189,24 @@ class MazeGenerator:
         self._grid[ny][nx] &= ~_OPPOSITE[wall]
 
     def _corner_cells(self) -> set[tuple[int, int]]:
-        """The four outer corners."""
+        """Return the four outer corner cells.
+
+        Returns:
+            Set of ``(x, y)`` corners.
+        """
         w = self.width
         h = self.height
         return {(0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1)}
 
     def _centre_cells(self) -> set[tuple[int, int]]:
-        """Pac-Man start cell(s). Same rule as maze_analyzer.
+        """Return Pac-Man start cell(s), matching ``maze_analyzer``.
 
-        Odd size: one middle cell. Even size: the 2x2 around the middle.
-        Only *one* of those must stay a corridor, so the 42 may cover
-        the others and still sit in the visual centre.
+        Odd size: one middle cell. Even size: the 2x2 around the
+        middle. Only *one* of those must stay a corridor, so the 42
+        may cover the others and still sit in the visual centre.
+
+        Returns:
+            Set of centre candidate cells.
         """
         w = self.width
         h = self.height
@@ -149,14 +215,26 @@ class MazeGenerator:
         return {(x, y) for y in rows for x in cols}
 
     def _hard_forbidden(self) -> set[tuple[int, int]]:
-        """Cells the 42 must never cover: entry, exit, corners."""
+        """Return cells the 42 must never cover.
+
+        Returns:
+            Entry, exit, and the four corners.
+        """
         return {self.entry, self.exit} | self._corner_cells()
 
     def _remainder_connected(
         self,
         blocked: set[tuple[int, int]],
     ) -> bool:
-        """True if every non-blocked cell is reachable from entry."""
+        """Return whether every non-blocked cell reaches the entry.
+
+        Args:
+            blocked: Cells treated as sealed (the candidate 42).
+
+        Returns:
+            True if every cell outside ``blocked`` is reachable from
+            the entry without stepping on a blocked cell.
+        """
         if self.entry in blocked or self.exit in blocked:
             return False
         seen: set[tuple[int, int]] = {self.entry}
@@ -184,8 +262,8 @@ class MazeGenerator:
         the valid offset whose glyph centre is closest to the maze
         centre, not the first fit from the top-left.
 
-        The app (Person B) prints the console message when has_pattern
-        is False. The engine never prints.
+        The app (Person B) prints the console message when
+        ``has_pattern`` is False. The engine never prints.
         """
         self._pattern_cells = frozenset()
         self._has_pattern = False
@@ -261,7 +339,15 @@ class MazeGenerator:
             stack.append((nx, ny))
 
     def _degree(self, x: int, y: int) -> int:
-        """How many open passages this cell has to in-bound neighbours."""
+        """Count open passages from a cell to in-bound neighbours.
+
+        Args:
+            x: Column index.
+            y: Row index.
+
+        Returns:
+            Number of open walls that lead to a cell inside the maze.
+        """
         n = 0
         for wall, (dx, dy) in _DELTA.items():
             if self._grid[y][x] & wall:
@@ -273,11 +359,17 @@ class MazeGenerator:
         return n
 
     def _block_is_open_3x3(self, x: int, y: int) -> bool:
-        """True if the 3x3 with top-left (x, y) has no internal walls.
+        """Return whether a 3x3 block has no internal walls.
 
-        Only east walls inside the window and south walls inside the
-        window matter. The outer edge of the 3x3 is the hall boundary,
-        not an internal opening.
+        Only east and south walls *inside* the window matter. The outer
+        edge of the 3x3 is the hall boundary, not an internal opening.
+
+        Args:
+            x: Column of the top-left cell of the window.
+            y: Row of the top-left cell of the window.
+
+        Returns:
+            True if every internal wall in the 3x3 is open.
         """
         for dy in range(3):
             for dx in range(2):
@@ -290,7 +382,11 @@ class MazeGenerator:
         return True
 
     def _has_open_3x3(self) -> bool:
-        """True if any 3x3 block has all internal walls open."""
+        """Return whether any 3x3 block is fully open inside.
+
+        Returns:
+            True if at least one 3x3 window has all internal walls open.
+        """
         for y in range(self.height - 2):
             for x in range(self.width - 2):
                 if self._block_is_open_3x3(x, y):
@@ -298,11 +394,19 @@ class MazeGenerator:
         return False
 
     def _creates_open_3x3(self, x: int, y: int, wall: int) -> bool:
-        """True if opening this wall would make a 3x3 hall.
+        """Return whether opening a wall would make a 3x3 hall.
 
         Open, inspect, restore. The eval asks how the 3x3 rule is
         verified: the check lives in the removal loop, not as a cleanup
         pass afterwards.
+
+        Args:
+            x: Column of the cell.
+            y: Row of the cell.
+            wall: Wall bit to try opening.
+
+        Returns:
+            True if the temporary opening would create a 3x3 hall.
         """
         dx, dy = _DELTA[wall]
         nx = x + dx
@@ -318,7 +422,16 @@ class MazeGenerator:
     def _closed_interior_walls(
         self, x: int, y: int
     ) -> list[int]:
-        """Closed walls that lead to a normal (non-42) neighbour."""
+        """List closed walls that lead to a normal (non-42) neighbour.
+
+        Args:
+            x: Column index.
+            y: Row index.
+
+        Returns:
+            Wall bits that are still closed and face an in-bound cell
+            that is not part of the 42 pattern.
+        """
         walls: list[int] = []
         for wall, (dx, dy) in _DELTA.items():
             if not (self._grid[y][x] & wall):
@@ -333,18 +446,29 @@ class MazeGenerator:
         return walls
 
     def _try_open(self, x: int, y: int, wall: int) -> bool:
-        """Open one wall unless that would create a 3x3 hall."""
+        """Open one wall unless that would create a 3x3 hall.
+
+        Args:
+            x: Column index.
+            y: Row index.
+            wall: Wall bit to open.
+
+        Returns:
+            True if the wall was opened, False if the 3x3 check refused
+            it.
+        """
         if self._creates_open_3x3(x, y, wall):
             return False
         self._open_wall(x, y, wall)
         return True
 
     def _braid(self) -> None:
-        """Open dead-ends so the board has loops (A6).
+        """Open dead-ends so the board has loops.
 
-        Subject: PERFECT=False needs at least two independent routes.
-        A couple of real dead-ends are tolerated; 42-enclosed ones do
-        not count. Each candidate wall is checked for 3x3 first.
+        Subject: ``PERFECT=False`` needs at least two independent
+        routes. A couple of real dead-ends are tolerated; 42-enclosed
+        ones do not count. Each candidate wall is checked for 3x3
+        first.
         """
         limit = self.width * self.height * 4
         for _ in range(limit):
@@ -374,7 +498,11 @@ class MazeGenerator:
                 return
 
     def _key_cells(self) -> set[tuple[int, int]]:
-        """Corners plus centre: Pac-Man start / ghost seats."""
+        """Return corners plus centre (Pac-Man start / ghost seats).
+
+        Returns:
+            Set of key cells that must stay open corridors.
+        """
         w = self.width
         h = self.height
         cells: set[tuple[int, int]] = {
@@ -409,8 +537,9 @@ class MazeGenerator:
 
         Re-seed first so the same seed always rebuilds the same maze.
         Stamp the 42 (or skip it), then carve a perfect maze. If
-        PERFECT is false, braid dead-ends and open corners plus centre.
-        Each extra opening is refused if it would create a 3x3 hall.
+        ``perfect`` is False, braid dead-ends and open corners plus
+        centre. Each extra opening is refused if it would create a
+        3x3 hall.
         """
         self._rng = random.Random(self.seed)
         self._init_grid()
@@ -422,22 +551,44 @@ class MazeGenerator:
 
     @property
     def grid(self) -> list[list[int]]:
+        """Wall encoding of the maze as ``grid[y][x]`` in ``0..15``.
+
+        Returns:
+            Nested list of cell wall bits (set bit = wall closed).
+        """
         return self._grid
 
     @property
     def pattern_cells(self) -> frozenset[tuple[int, int]]:
+        """Cells that form the stamped ``42`` pattern.
+
+        Returns:
+            Frozen set of ``(x, y)`` cells, or empty if no pattern.
+        """
         return self._pattern_cells
 
     @property
     def has_pattern(self) -> bool:
+        """Whether a ``42`` pattern was placed in this maze.
+
+        Returns:
+            False when the maze was too small or no valid offset fit.
+        """
         return self._has_pattern
 
     def solve(self) -> list[str]:
-        """Shortest path from entry to exit as N/E/S/W.
+        """Find the shortest path from entry to exit as N/E/S/W.
 
-        BFS, not DFS: popleft spreads in waves, so the first time the
-        exit is reached the route is the shortest. The app must call
-        this once and reuse the list for the file and the screen.
+        BFS, not DFS: ``popleft`` spreads in waves, so the first time
+        the exit is reached the route is the shortest. The app must
+        call this once and reuse the list for the file and the screen.
+
+        Returns:
+            Direction letters from entry to exit, e.g.
+            ``["E", "S", "E"]``.
+
+        Raises:
+            NoSolutionError: No path exists from entry to exit.
         """
         start = self.entry
         goal = self.exit
@@ -482,5 +633,11 @@ class MazeGenerator:
         return path
 
     def to_rows(self) -> list[str]:
-        """One hex digit per cell, row by row (Subject IV.5)."""
+        """Encode the grid as hex rows for the output file.
+
+        Subject IV.5: one hex digit per cell, bit set means wall closed.
+
+        Returns:
+            ``height`` strings of ``width`` hex characters each.
+        """
         return ["".join(f"{cell:x}" for cell in row) for row in self._grid]
