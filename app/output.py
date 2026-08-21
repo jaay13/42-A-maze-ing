@@ -17,28 +17,21 @@ def format_output(
 ) -> str:
     """Build the complete contents of the maze output file.
 
-    The layout is the one required by subject SS IV.5: every grid row
-    on its own line, a single blank line, then three lines holding the
-    entry coordinates, the exit coordinates and the solution path.
-    Coordinates are written as 'x,y' with no parentheses, and the path
-    letters are separated by spaces. Every line is terminated with
-    '\\n', including the last one.
+    The layout is the one required by subject SS IV.5: every grid row on
+    its own line, a single blank line, then the entry coordinates, the exit
+    coordinates and the solution path. Coordinates are written as 'x,y'
+    with no parentheses, path letters are separated by spaces, and every
+    line is newline-terminated including the last.
 
-    The letters are written unchanged rather than as coordinates: the
-    file and the terminal render are two views of the same solve()
-    result, and app.render.path_cells converts the same letters into
-    the cells it draws. Both therefore describe one path, which the
-    evaluation cross-checks (split.md:112).
-
-    Performs no I/O, so the format can be checked in isolation.
+    Performs no I/O, so the format can be checked without touching disk.
 
     Args:
         rows: One string of hexadecimal wall digits per grid row, as
             returned by MazeGenerator.to_rows().
         entry: The (x, y) entry cell.
         exit_coords: The (x, y) exit cell.
-        solution: The shortest path as single-letter directions
-            ('N', 'E', 'S', 'W'), as returned by MazeGenerator.solve().
+        solution: The shortest path as single-letter directions ('N', 'E',
+            'S', 'W'), as returned by MazeGenerator.solve().
 
     Returns:
         The full file contents as one newline-terminated string.
@@ -63,9 +56,6 @@ def write_output(
 ) -> None:
     """Write the maze to *path*, creating or overwriting the file.
 
-    Formats the maze with format_output and writes it in one go, using
-    a context manager so the handle is closed even if the write fails.
-
     Args:
         path: Destination file, from the config's OUTPUT_FILE key. An
             existing file is overwritten.
@@ -75,7 +65,7 @@ def write_output(
         solution: The shortest path as single-letter directions.
 
     Raises:
-        OutputError: If the file cannot be written — no such directory,
+        OutputError: If the file cannot be written -- no such directory,
             permission denied, the path is a directory, and so on.
     """
     output_str = format_output(rows, entry, exit_coords, solution)

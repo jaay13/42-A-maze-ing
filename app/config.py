@@ -72,19 +72,18 @@ def check_mandatory_keys(config: dict[str, str]) -> None:
 def check_unknown_keys(config: dict[str, str]) -> None:
     """Reject any config key the program does not recognise.
 
-    Unknown keys are an error rather than a silent pass-through so that
-    a typo in an optional key (e.g. 'SED' for 'SEED') fails loudly
-    instead of quietly changing behaviour. Adding a new key to the
-    config format therefore means registering it in
-    MANDATORY_CONFIG_KEYS or OPTIONAL_CONVERTERS.
+    Unknown keys are an error rather than a silent pass-through so a typo
+    in an optional key ('SED' for 'SEED') fails loudly. A new config key
+    must therefore be registered in MANDATORY_CONFIG_KEYS or
+    OPTIONAL_CONVERTERS.
 
     Args:
         config: The raw config dict returned by load_config.
 
     Raises:
         ConfigError: If the config contains one or more keys that are
-            neither mandatory nor optional, naming all of them in a
-            single message.
+            neither mandatory nor optional, naming all of them in a single
+            message.
     """
     known_keys = set(MANDATORY_CONFIG_KEYS) | set(OPTIONAL_CONVERTERS)
     remainder = set(config.keys()) - known_keys
@@ -96,20 +95,17 @@ def check_unknown_keys(config: dict[str, str]) -> None:
 
 
 def parse_int(raw: str, key: str) -> int:
-    """Convert a raw string into an int.
-
-    Used for WIDTH, HEIGHT and SEED.
+    """Convert a raw string into an int, for WIDTH, HEIGHT and SEED.
 
     Args:
         raw: The raw value string, e.g. '5'.
-        key: The config key this value came from, used in the error
-            message (e.g. 'WIDTH').
+        key: The config key, named in the error message.
 
     Returns:
         The parsed int.
 
     Raises:
-        ConfigError: If raw isn't a valid integer.
+        ConfigError: If raw is not a valid integer.
     """
     try:
         x = int(raw)
@@ -121,20 +117,17 @@ def parse_int(raw: str, key: str) -> int:
 
 
 def parse_coords(raw: str, key: str) -> tuple[int, int]:
-    """Convert a 'x,y' string into a tuple of two ints.
-
-    Used for ENTRY and EXIT.
+    """Convert a 'x,y' string into a tuple of two ints, for ENTRY/EXIT.
 
     Args:
         raw: The raw coordinate string, e.g. '0,0'.
-        key: The config key this value came from, used in the error
-            message (e.g. 'ENTRY').
+        key: The config key, named in the error message.
 
     Returns:
         A (x, y) tuple of ints.
 
     Raises:
-        ConfigError: If raw doesn't split into exactly two integers
+        ConfigError: If raw does not split into exactly two integers
             separated by a comma.
     """
     try:
@@ -150,14 +143,11 @@ def parse_coords(raw: str, key: str) -> tuple[int, int]:
 
 
 def parse_bool(raw: str, key: str) -> bool:
-    """Convert a raw string into a bool.
-
-    Used for PERFECT.
+    """Convert a raw string into a bool, for PERFECT.
 
     Args:
         raw: The raw value string, e.g. 'true' or 'False'.
-        key: The config key this value came from, used in the error
-            message (e.g. 'PERFECT').
+        key: The config key, named in the error message.
 
     Returns:
         True if raw is 'true' (case-insensitive), False if 'false'.
@@ -175,16 +165,14 @@ def parse_bool(raw: str, key: str) -> bool:
 
 
 def parse_renderer(raw: str, key: str) -> str:
-    """Convert a raw string into a renderer name.
+    """Convert a raw string into a renderer name, for RENDERER.
 
-    Used for RENDERER. The value is a preference, not a guarantee: a
-    run whose stdout is not a terminal falls back to plain ASCII
-    whatever this says.
+    The value is a preference, not a guarantee: a run whose stdout is not
+    a terminal falls back to plain ASCII whatever this says.
 
     Args:
         raw: The raw value string, e.g. 'blocks' or 'ASCII'.
-        key: The config key this value came from, used in the error
-            message (e.g. 'RENDERER').
+        key: The config key, named in the error message.
 
     Returns:
         'ascii' or 'blocks', lowercased.
@@ -208,19 +196,18 @@ def parse_delay(raw: str, key: str) -> int:
 
     Args:
         raw: The raw value string, e.g. '30'.
-        key: The config key this value came from, used in the error
-            message.
+        key: The config key, named in the error message.
 
     Returns:
         The delay in milliseconds, zero or more.
 
     Raises:
-        ConfigError: If raw is not an integer, or is negative. A
-            negative delay would otherwise reach time.sleep and raise,
-            landing in the last-resort handler instead of being
-            reported as the config error it is.
+        ConfigError: If raw is not an integer, or is negative.
     """
     ms = parse_int(raw, key)
+    # A negative delay would otherwise reach time.sleep and raise,
+    # landing in the last-resort handler instead of being reported
+    # as the config error it is.
     if ms < 0:
         raise ConfigError(
             f"[CONFIG_ERROR] '{key}' must be zero or more milliseconds, "

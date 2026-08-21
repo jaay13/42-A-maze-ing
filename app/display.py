@@ -19,18 +19,12 @@ def maze_lines(
 
     Picks the renderer: coloured blocks when stdout is a terminal and
     RENDERER asks for them, plain ASCII otherwise. RENDERER is only a
-    preference -- a run whose stdout is not a terminal falls back to
-    ASCII whatever it says, so redirected output never carries escape
-    sequences.
-
-    Takes the maze as plain data rather than a MazeGenerator, so no
-    module in app/ depends on the engine's interface -- the same rule
-    app.output follows.
+    preference, so redirected output never carries escape sequences.
 
     Args:
         grid: The maze, as MazeGenerator.grid.
-        config: The typed config dict, read for ENTRY, EXIT and
-            RENDERER. RENDERER defaults to blocks when absent.
+        config: The typed config dict, read for ENTRY, EXIT and RENDERER.
+            RENDERER defaults to blocks when absent.
         solution: Direction letters from the generate_maze call that
             produced the current maze.
         pattern: MazeGenerator.pattern_cells; empty if the maze is too
@@ -42,8 +36,8 @@ def maze_lines(
         One string per canvas row, ready to print in order.
 
     Raises:
-        RenderError: If the solution contains a direction letter that
-            is not 'N', 'E', 'S' or 'W'. Raised by render.
+        RenderError: If the solution contains a direction letter that is
+            not 'N', 'E', 'S' or 'W'. Raised by render.
     """
     coloured = use_colour()
 
