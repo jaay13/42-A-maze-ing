@@ -430,7 +430,10 @@ If you want to see the idea move rather than read about it:
 ## How the engine is put together
 
 Nothing here is a second algorithm. It is the same generator, built in
-layers so each rule has one place to live.
+layers so each rule has one place to live. All of that lives in
+`src/mazegen/generator.py` (plus `errors.py`). There are no separate
+`solver.py` / `pattern42.py` / `constraints.py` files: carve, 42,
+braid, 3x3 and BFS are methods on `MazeGenerator`.
 
 | Step | What it actually does | Builds a maze? | Solves a maze? |
 | --- | --- | --- | --- |
