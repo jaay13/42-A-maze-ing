@@ -291,18 +291,18 @@ One limitation worth knowing: **the analyzer never reads the solution path
 line.** It parses the entry and exit from the footer and discards the path,
 so a clean report says nothing about whether the path is correct or
 shortest. That check is done separately by the rehearsal harness in
-`not_for_submission/`.
+`tools/`.
 
 ### The rehearsal harness
 
 The gap above — that the analyzer discards the path line — is covered by a
-separate script, `not_for_submission/b8_rehearsal.py`:
+separate script, `tools/rehearsal.py`:
 
 ```
-python3 not_for_submission/b8_rehearsal.py
+python3 tools/rehearsal.py
 ```
 
-It replays the evaluation scale before an evaluator does, in two groups.
+It runs two groups of checks.
 The first sabotages `config.txt` seven ways and checks that every run dies
 cleanly: exit code 1, one message, no traceback, and no output file left
 behind. The second generates both `PERFECT` modes on three seeds each and
@@ -368,12 +368,12 @@ Two deliberate exceptions:
 
 ### How AI was used
 
-- **`not_for_submission/b8_rehearsal.py` was written by Claude
+- **`tools/rehearsal.py` was written by Claude
   (Anthropic)** and is the only file in the repository authored by AI.
-  It is a test harness: it replays the evaluation scale's config
+  It is a test harness: it runs the config
   sabotages and checks the output file's solution path against an
   independent breadth-first search and against the rendered maze. It is
-  not submitted, nothing that ships imports it, and its module
+  a development tool, nothing that ships imports it, and its module
   docstring states this.
 - Claude was also used for review and explanation of the application
   layer — arguing through design decisions, reproducing failures and

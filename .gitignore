@@ -18,9 +18,9 @@ dist/
 # macOS
 .DS_Store
 
-# Subject material -- not ours to redistribute
-not_for_submission/en.subject.pdf
-not_for_submission/eval.pdf
+# Local-only working material (defence notes, subject PDF).
+# Never publish: the subject is not ours to redistribute.
+not_for_submission/
 
 
 # Generated maze output (default OUTPUT_FILE)

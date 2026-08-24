@@ -1,4 +1,24 @@
-*This project has been created as part of the 42 curriculum by jakoch, jhimmero.*
+# 42 A-Maze-ing
+
+A configurable maze generator and terminal visualiser: a pip-installable
+generator package (`mazegen`) plus an application layer that reads a
+config file, renders the maze in colour blocks or ASCII, animates the
+solve and writes the result to disk.
+
+**A two-person project** from the [42 Berlin](https://42berlin.de)
+curriculum, built with
+[Jan Philip Himmeröder (@PhilipHim)](https://github.com/PhilipHim).
+Philip owns the engine (`src/mazegen/**`, packaging, the wheel);
+[I (@jaay13)](https://github.com/jaay13) own the application layer
+(`a_maze_ing.py`, `app/**`, config parsing, rendering, the Makefile).
+The seam between the two is the frozen contract in
+[`docs/interface.md`](docs/interface.md) — agreed on day 0, never
+changed unilaterally.
+
+> Developed at
+> [PhilipHim/Amazeing](https://github.com/PhilipHim/Amazeing), where the
+> pull-request history and code reviews live. The `#N` references in the
+> merge commits below point at pull requests in that repository.
 
 ## Contents
 
@@ -315,18 +335,18 @@ One limitation worth knowing: **the analyzer never reads the solution path
 line.** It parses the entry and exit from the footer and discards the path,
 so a clean report says nothing about whether the path is correct or
 shortest. That check is done separately by the rehearsal harness in
-`not_for_submission/`.
+`tools/`.
 
 ### The rehearsal harness
 
 The gap above (the analyzer discards the path line) is covered by a
-separate script, `not_for_submission/b8_rehearsal.py`:
+separate script, `tools/rehearsal.py`:
 
 ```
-python3 not_for_submission/b8_rehearsal.py
+python3 tools/rehearsal.py
 ```
 
-It replays the evaluation scale before an evaluator does, in two groups.
+It runs two groups of checks.
 The first sabotages `config.txt` seven ways and checks that every run dies
 cleanly: exit code 1, one message, no traceback, and no output file left
 behind. The second generates both `PERFECT` modes on three seeds each and
@@ -582,7 +602,7 @@ are reachable, and the loop / dead-end counts.
 
 The analyser does *not* read the path line in the file. The file path
 and the `*` on screen both come from one `solve()` call (BFS). The
-rehearsal harness in `not_for_submission/` walks the file path and
+rehearsal harness in `tools/` walks the file path and
 compares its length to an independent BFS.
 
 ## Reusable module
@@ -716,12 +736,12 @@ opening the rest of the game. That is the pedagogical point of
 
 ### How AI was used
 
-- **`not_for_submission/b8_rehearsal.py` was written by Claude
+- **`tools/rehearsal.py` was written by Claude
   (Anthropic)** and is the only file in the repository authored by AI
-  as a whole. It is a test harness: it replays the evaluation scale's
-  config sabotages and checks the output file's solution path against an
+  as a whole. It is a test harness: it runs the config
+  sabotages and checks the output file's solution path against an
   independent breadth-first search and against the rendered maze. It is
-  not submitted, nothing that ships imports it, and its module
+  a development tool, nothing that ships imports it, and its module
   docstring states this.
 - Claude was also used for review and explanation of the application
   layer (arguing through design decisions, reproducing failures and
@@ -735,10 +755,10 @@ opening the rest of the game. That is the pedagogical point of
 
 ## Team and project management
 
-**Roles.** jhimmero owns the engine (`src/mazegen/**`, `pyproject.toml`,
-`LICENSE.md`, the wheel). jakoch owns the application (`a_maze_ing.py`,
+**Roles.** Philip owns the engine (`src/mazegen/**`, `pyproject.toml`,
+`LICENSE.md`, the wheel). Jason owns the application (`a_maze_ing.py`,
 `app/**`, `config.txt`, `Makefile`). The seam is the frozen contract in
-`INTERFACE.md`: B never reimplements BFS, and the only exceptions the
+`docs/interface.md`: the app never reimplements BFS, and the only exceptions the
 app is allowed to see are `MazegenError` subclasses.
 
 **How we planned.** We split by that seam on day 0, not by "features".

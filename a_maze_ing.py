@@ -206,8 +206,8 @@ if __name__ == "__main__":
     except (EOFError, KeyboardInterrupt):
         print()
         sys.exit(0)
-    # Last resort (split.md:203). Subject SS IV.2 makes one traceback
-    # fatal, so nothing may reach the terminal unhandled. Every error
+    # Last resort. A single unhandled traceback is fatal, so nothing
+    # may reach the terminal unhandled. Every error
     # we know how to describe is caught above: bad WIDTH/HEIGHT/ENTRY/
     # EXIT raise MazegenError from the engine's own validation, and the
     # config and output failures raise AppError. This is a backstop,

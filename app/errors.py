@@ -40,7 +40,7 @@ class RenderError(AppError):
 
     Separate from MazegenError because the app detects these: the engine
     returned successfully, but the data it handed over does not match
-    INTERFACE.md. No user input can trigger this, only a contract
+    docs/interface.md. No user input can trigger this, only a contract
     violation.
 
     Args:

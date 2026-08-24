@@ -2,7 +2,7 @@
 
 Builds perfect or Pac-Man-style mazes, stamps an optional ``42``
 pattern, and finds the shortest path with BFS. Public surface matches
-``INTERFACE.md``.
+``docs/interface.md``.
 """
 
 import random

@@ -1,7 +1,7 @@
 """Terminal rendering of a maze (Person B / app layer).
 
 Each cell of the grid is one integer 0-15 holding its four walls, as
-defined by subject SS IV.5 and INTERFACE.md:
+defined by subject SS IV.5 and docs/interface.md:
 
     bit 0 (value 1) = North
     bit 1 (value 2) = East
