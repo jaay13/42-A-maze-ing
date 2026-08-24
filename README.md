@@ -15,10 +15,11 @@ The seam between the two is the frozen contract in
 [`docs/interface.md`](docs/interface.md) — agreed on day 0, never
 changed unilaterally.
 
-> Developed at
-> [PhilipHim/Amazeing](https://github.com/PhilipHim/Amazeing), where the
-> pull-request history and code reviews live. The `#N` references in the
-> merge commits below point at pull requests in that repository.
+> Originally developed in a shared private repository, where the
+> pull-request discussions and code reviews live. The commit history
+> here is complete — including every merge commit and feature branch —
+> but the `#N` references in those merge messages point at pull requests
+> in that private repository and do not resolve from here.
 
 ## Contents
 
