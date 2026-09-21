@@ -1,4 +1,4 @@
-.PHONY: install run debug clean fclean re lint lint-strict
+.PHONY: install run debug clean fclean re lint lint-strict test
 
 # fclean asks config.txt where the maze is written rather than
 # assuming maze.txt, since OUTPUT_FILE is configurable.
@@ -48,3 +48,6 @@ lint:
 lint-strict:
 	flake8 .
 	mypy . --strict
+
+test:
+	python3 -m pytest -q
