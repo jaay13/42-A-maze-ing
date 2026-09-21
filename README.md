@@ -102,13 +102,15 @@ Other targets:
 | `make re` | `fclean`, then `install` |
 | `make lint` | `flake8 .` and `mypy .` with the subject's flags |
 | `make lint-strict` | `flake8 .` and `mypy . --strict` |
+| `make test` | runs the pytest suite in `tests/` |
 
-`requirements-dev.txt` pins flake8 and mypy exactly, so a fresh clone
+`requirements-dev.txt` pins flake8, mypy and pytest exactly, so a fresh clone
 lints with the same versions rather than whatever is newest.
 
 The Git root must contain `README.md`, `LICENSE.md`, `a_maze_ing.py`,
 `config.txt`, `mazegen-*.whl` (or `.tar.gz`), and `pyproject.toml` so
-the package can be rebuilt. `make lint` must pass on the Python files.
+the package can be rebuilt. `make lint` must pass on the Python files. CI runs `make lint` and
+`make test` on every push and pull request.
 
 The live rebuild (one venv to build, a second venv to install the
 wheel, `PYTHONPATH` unset) is spelled out under
