@@ -23,13 +23,16 @@ def load_config(path: str) -> dict[str, str]:
 
     Raises:
         ConfigError: If the file cannot be read at all (missing,
-            unreadable, a directory, ...), a non-blank/non-comment line
-            has no '=', a mandatory key is missing, or the file
-            contains a key the program does not recognise.
+            unreadable, a directory, not UTF-8 text, ...), a
+            non-blank/non-comment line has no '=', a key appears twice,
+            a mandatory key is missing, or the file contains a key the
+            program does not recognise.
     """
     config: dict[str, str] = {}
+    # Line each key was first seen on, so a duplicate can name both.
+    seen_on: dict[str, int] = {}
     try:
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             for line_nbr, line in enumerate(f, start=1):
                 raw_line = line.rstrip("\n")
                 line = line.strip()
@@ -41,10 +44,25 @@ def load_config(path: str) -> dict[str, str]:
                         f"(No. {line_nbr}) in config: '{raw_line}'"
                     )
                 key, value = line.split("=", 1)
-                config[key.strip().upper()] = value.strip()
+                key = key.strip().upper()
+                # A silent last-one-wins would surface later as an
+                # unrelated error, e.g. EXIT outside a shrunken maze.
+                if key in seen_on:
+                    raise ConfigError(
+                        f"[CONFIG_ERROR] '{key}' is set twice in config "
+                        f"(lines {seen_on[key]} and {line_nbr})"
+                    )
+                seen_on[key] = line_nbr
+                config[key] = value.strip()
     except OSError as e:
         raise ConfigError(
             f"[CONFIG_ERROR] {e.strerror}: '{path}'"
+        ) from e
+    # Not an OSError, so it would otherwise reach the last-resort
+    # handler as an INTERNAL_ERROR instead of a config problem.
+    except UnicodeDecodeError as e:
+        raise ConfigError(
+            f"[CONFIG_ERROR] Config is not UTF-8 text: '{path}'"
         ) from e
     check_mandatory_keys(config)
     check_unknown_keys(config)
