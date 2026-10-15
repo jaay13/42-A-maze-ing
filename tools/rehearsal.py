@@ -57,6 +57,7 @@ class Tally:
     """Running count of check outcomes, and the worst one seen."""
 
     def __init__(self) -> None:
+        """Start with every count at zero."""
         self.passed = 0
         self.warned = 0
         self.failed = 0
@@ -97,6 +98,15 @@ class Run:
         code: int,
         output_file: Optional[str],
     ) -> None:
+        """Store what one run of the app produced.
+
+        Args:
+            stdout: Everything the app printed to stdout.
+            stderr: Everything the app printed to stderr.
+            code: The app's exit status.
+            output_file: Path of the maze file the run wrote, or None
+                when it was not recorded.
+        """
         self.stdout = stdout
         self.stderr = stderr
         self.code = code
@@ -320,7 +330,8 @@ def parse_output_file(
 
     Raises:
         ValueError: If the layout is not rows, blank line, three
-            footer lines.
+            footer lines, if a grid digit is not hexadecimal, or if
+            the entry or exit is not two integers ``x,y``.
     """
     lines = text.split("\n")
     if lines and lines[-1] == "":
@@ -338,6 +349,7 @@ def parse_output_file(
     grid = [[int(char, 16) for char in row] for row in rows]
 
     def coordinate(raw: str) -> tuple[int, int]:
+        """Parse an ``x,y`` footer field into an ``(x, y)`` tuple."""
         parts = raw.split(",")
         if len(parts) != 2:
             raise ValueError(f"malformed coordinate {raw!r}")
