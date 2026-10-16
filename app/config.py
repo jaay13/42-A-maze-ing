@@ -249,9 +249,10 @@ def parse_config(raw: dict[str, str]) -> dict[str, Any]:
     """Convert known config values to their real types.
 
     WIDTH/HEIGHT become int, ENTRY/EXIT become (int, int) tuples, and
-    PERFECT becomes bool. The optional keys SEED and RENDERER are
-    converted only when present: an absent optional key stays absent
-    rather than becoming None, so the caller supplies its own default.
+    PERFECT becomes bool. The optional keys SEED, RENDERER and
+    ANIMATION_DELAY are converted only when present: an absent
+    optional key stays absent rather than becoming None, so the caller
+    supplies its own default.
     Every other key (e.g. OUTPUT_FILE) is passed through unchanged.
 
     Args:

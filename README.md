@@ -236,7 +236,7 @@ case.
 |---|---|---|---|
 | `SEED` | integer | none (random) | same seed, same maze |
 | `RENDERER` | `blocks` / `ascii` | `blocks` | preferred display style |
-| `ANIMATION_DELAY` | integer milliseconds | on | path reveal speed; `0` turns animation off |
+| `ANIMATION_DELAY` | integer milliseconds | `30` | path reveal speed; `0` turns animation off |
 
 `RENDERER` is a preference, not a guarantee. Coloured blocks are used
 only when stdout is a terminal, `NO_COLOR` is unset and `TERM` is not
