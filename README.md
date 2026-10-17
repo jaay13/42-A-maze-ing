@@ -125,9 +125,10 @@ wheel, `PYTHONPATH` unset) is spelled out under
 | 3 | change the wall colour |
 | 4 | quit |
 
-The path starts hidden. Menu key `2` shows it. If `ANIMATION_DELAY` is
-set and stdout is a terminal, the path is drawn one step at a time
-before the full board. Any other input prints a short hint and asks
+The path starts hidden. Menu key `2` shows it. When stdout is a
+terminal, the path is first drawn one step at a time (30 ms per step
+by default; `ANIMATION_DELAY` sets the speed and `0` turns it off),
+then the full board. Any other input prints a short hint and asks
 again. Ctrl-D and Ctrl-C both quit cleanly.
 
 ## Example output
