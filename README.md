@@ -9,7 +9,7 @@ solve and writes the result to disk.
 curriculum, built with
 [Jan Philip Himmeröder (@PhilipHim)](https://github.com/PhilipHim).
 Philip owns the engine (`src/mazegen/**`, packaging, the wheel);
-[I (@jaay13)](https://github.com/jaay13) own the application layer
+[I (@jasonkochai)](https://github.com/jasonkochai) own the application layer
 (`a_maze_ing.py`, `app/**`, config parsing, rendering, the Makefile).
 The seam between the two is the frozen contract in
 [`docs/interface.md`](docs/interface.md) — agreed on day 0, never
